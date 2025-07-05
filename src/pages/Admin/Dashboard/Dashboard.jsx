@@ -20,6 +20,7 @@ import {
   IoMenuOutline,
   IoCloseOutline,
 } from "react-icons/io5";
+import { MdEditDocument } from "react-icons/md";
 import { RiRoadMapLine } from "react-icons/ri";
 import { SlHome } from "react-icons/sl";
 import { TbBrandGoogleAnalytics } from "react-icons/tb";
@@ -53,6 +54,7 @@ const Dashboard = () => {
   const pageTitles = {
     "/dashboard": "Dashboard",
     "/dashboard/orders": "Order Lists",
+    "/dashboard/drivers": "Drivers",
     "/dashboard/customers": "Customers",
     "/dashboard/analytics": "Analytics",
     "/dashboard/tasks": "Task Management",
@@ -60,6 +62,7 @@ const Dashboard = () => {
     "/dashboard/map": "Map",
     "/dashboard/chat": "Chat",
     "/dashboard/wallet": "Wallet",
+    "/dashboard/TermsPrivacyPolicy": "Terms & Privacy Policy",
     "/dashboard/support": "Support",
   };
   const matchedPath = Object.keys(pageTitles)
@@ -70,13 +73,14 @@ const Dashboard = () => {
 
   const menuItems = [
     { path: "/dashboard", label: "Dashboard", icon: <SlHome /> },
-    { path: "/", label: "Start Working", icon: <IoCarSportOutline /> },
+    { path: "drivers", label: "Drivers", icon: <IoCarSportOutline /> },
     { path: "tasks", label: "Task Management", icon: <GoTasklist  /> },
     { path: "orders", label: "Orders", icon: <TfiAlignLeft /> },
     { path: "pricing", label: "Control Pricing", icon: <RiRoadMapLine /> },
     { path: "customers", label: "Customers", icon: <FiUsers /> },
     { path: "analytics", label: "Analytics", icon: <TbBrandGoogleAnalytics /> },
     { path: "earnings", label: "Earnings", icon: <BsCashCoin /> },
+    { path: "TermsPrivacyPolicy", label: "Terms & Privacy Policy", icon: <MdEditDocument /> },
     { path: "chat", label: "Chat", icon: <BsChatLeftDots /> },
     { path: "wallet", label: "Wallet", icon: <BiWalletAlt /> },
     { path: "support", label: "Support", icon: <BiSupport /> },

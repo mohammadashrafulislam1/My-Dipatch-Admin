@@ -16,6 +16,8 @@ import Admin from "../pages/Admin/Admin";
 import Tasks from "../pages/Admin/Dashboard/Tasks";
 import Pricing from "../pages/Admin/Dashboard/Pricing";
 import Support from "../pages/Admin/Dashboard/Support";
+import Drivers from "../pages/Admin/Dashboard/Drivers";
+import TermsPrivacyPolicy from "../pages/Admin/Dashboard/Terms & Privacy Policy";
 
 export const router = createBrowserRouter([
     {
@@ -58,6 +60,14 @@ export const router = createBrowserRouter([
             {
                 path:'support',
                 element:<Support/>
+            },
+            {
+                path:'drivers',
+                element:<Drivers/>
+            },
+            {
+                path:'TermsPrivacyPolicy',
+                element:<TermsPrivacyPolicy/>
             },
             {
                 path:'wallet',

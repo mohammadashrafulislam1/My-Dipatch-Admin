@@ -33,7 +33,7 @@ const Signup = () => {
         />
 
         <h2 className="text-2xl font-bold text-center text-[#006FFF] mb-6">
-          Sign Up As Driver
+          Sign Up As Admin
         </h2>
 
         {/* Signup Form */}

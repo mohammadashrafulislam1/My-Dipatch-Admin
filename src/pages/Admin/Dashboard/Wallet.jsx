@@ -61,7 +61,7 @@ const Wallet = () => {
 
   return (
     <div className="md:max-w-3xl mx-auto p-4 space-y-6 relative">
-      {/* Driver Balance */}
+      {/* Admin Balance */}
       <div className="bg-blue-600 text-white p-6 rounded-xl shadow-md">
         <div className="text-sm">Total Earnings</div>
         <div className="text-3xl font-bold mt-1">$4,120.75</div>

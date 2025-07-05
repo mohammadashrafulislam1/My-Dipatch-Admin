@@ -13,12 +13,12 @@ import {
   FiSettings,
   FiUsers,
 } from "react-icons/fi";
+import { GoTasklist } from "react-icons/go";
 import {
   IoCarSportOutline,
   IoMenuOutline,
   IoCloseOutline,
 } from "react-icons/io5";
-import { MdOutlineReviews } from "react-icons/md";
 import { RiRoadMapLine } from "react-icons/ri";
 import { SlHome } from "react-icons/sl";
 import { TbBrandGoogleAnalytics } from "react-icons/tb";
@@ -54,7 +54,7 @@ const Dashboard = () => {
     "/dashboard/orders": "Order Lists",
     "/dashboard/customers": "Customers",
     "/dashboard/analytics": "Analytics",
-    "/dashboard/reviews": "Reviews",
+    "/dashboard/tasks": "Task Management",
     "/dashboard/earnings": "Earnings",
     "/dashboard/map": "Map",
     "/dashboard/chat": "Chat",
@@ -69,12 +69,12 @@ const Dashboard = () => {
   const menuItems = [
     { path: "/dashboard", label: "Dashboard", icon: <SlHome /> },
     { path: "/", label: "Start Working", icon: <IoCarSportOutline /> },
-    { path: "orders", label: "Order Lists", icon: <TfiAlignLeft /> },
+    { path: "tasks", label: "Task Management", icon: <GoTasklist  /> },
+    { path: "orders", label: "Orders", icon: <TfiAlignLeft /> },
+    { path: "pricing", label: "Control Pricing", icon: <RiRoadMapLine /> },
     { path: "customers", label: "Customers", icon: <FiUsers /> },
     { path: "analytics", label: "Analytics", icon: <TbBrandGoogleAnalytics /> },
-    { path: "reviews", label: "Reviews", icon: <MdOutlineReviews /> },
     { path: "earnings", label: "Earnings", icon: <BsCashCoin /> },
-    { path: "map", label: "Map", icon: <RiRoadMapLine /> },
     { path: "chat", label: "Chat", icon: <BsChatLeftDots /> },
     { path: "wallet", label: "Wallet", icon: <BiWalletAlt /> },
   ];

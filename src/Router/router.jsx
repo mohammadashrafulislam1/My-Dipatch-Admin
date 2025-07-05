@@ -4,17 +4,17 @@ import Order from "../pages/Admin/Dashboard/Orders";
 import Customers from "../pages/Admin/Dashboard/Customers";
 import Analytics from "../pages/Admin/Dashboard/Analytics";
 import Earnings from "../pages/Admin/Dashboard/Earnings";
-import Map from "../pages/Admin/Dashboard/Map";
 import Chat from "../pages/Admin/Dashboard/Chat";
 import Wallet from "../pages/Admin/Dashboard/Wallet";
 import Default from "../pages/Admin/Dashboard/Default";
-import Reviews from "../pages/Admin/Dashboard/Reviews";
 import Login from "../pages/Authentication/Login";
 import Signup from "../pages/Authentication/Signup";
 import Profile from "../pages/Admin/Profile/Profile";
 import Settings from "../pages/Admin/Profile/Setting";
 import Notification from "../pages/Admin/Profile/Notification";
 import Admin from "../pages/Admin/Admin";
+import Tasks from "../pages/Admin/Dashboard/Tasks";
+import Pricing from "../pages/Admin/Dashboard/Pricing";
 
 export const router = createBrowserRouter([
     {
@@ -39,16 +39,16 @@ export const router = createBrowserRouter([
                 element:<Analytics/>
             },
             {
-                path:'reviews',
-                element:<Reviews/>
+                path:'tasks',
+                element:<Tasks/>
             },
             {
                 path:'earnings',
                 element:<Earnings/>
             },
             {
-                path:'map',
-                element:<Map/>
+                path:'pricing',
+                element:<Pricing/>
             },
             {
                 path:'chat',

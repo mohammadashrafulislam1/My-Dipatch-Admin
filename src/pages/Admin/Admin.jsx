@@ -136,7 +136,7 @@ const Admin = () => {
       </NavLink>
 
       <NavLink
-        to="/dashboard/map"
+        to="/dashboard/pricing"
         className={({ isActive }) =>
           `menu-items poppins-regular flex gap-2 items-center mb-[2px] ${
             isActive ? 'bg-[#006eff2a] text-[#006FFF]' : ''
@@ -144,7 +144,7 @@ const Admin = () => {
         }
       >
         <RiRoadMapLine className="text-[16px]" />
-        Map
+        Pricing
       </NavLink>
 
       <NavLink

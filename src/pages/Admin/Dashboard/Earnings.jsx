@@ -1,190 +1,246 @@
-import { useState, useMemo } from "react";
-import { DateRange } from "react-date-range";
-import { format, isWithinInterval, parse } from "date-fns";
-import { FaDollarSign, FaCar, FaClock } from "react-icons/fa";
-import { IoChevronDown } from "react-icons/io5";
-
-import "react-date-range/dist/styles.css";
-import "react-date-range/dist/theme/default.css";
-
-const allTrips = [
-  {
-    date: "2025-06-05",
-    from: "Downtown",
-    to: "Airport",
-    fare: 25.0,
-    distance: 12,
-    duration: 30, // in minutes
-  },
-  {
-    date: "2025-06-18",
-    from: "Station",
-    to: "Mall",
-    fare: 16.8,
-    distance: 7.4,
-    duration: 20,
-  },
-  {
-    date: "2025-07-05",
-    from: "Park Ave",
-    to: "University",
-    fare: 12.5,
-    distance: 5.3,
-    duration: 18,
-  },
-  {
-    date: "2025-07-22",
-    from: "Central Park",
-    to: "Tech Hub",
-    fare: 19.6,
-    distance: 9.1,
-    duration: 25,
-  },
-];
+import { useState, useEffect } from "react";
 
 const Earnings = () => {
-  const [range, setRange] = useState([
+  // Dummy earnings data (each row = one ride/payment)
+  const dummyEarnings = [
     {
-      startDate: new Date("2025-06-02"),
-      endDate: new Date("2025-07-20"),
-      key: "selection",
+      id: 1,
+      driver: "Alice Johnson",
+      date: "2025-07-04",
+      amount: 45.5,
+      status: "Pending",
     },
-  ]);
-  const [showCalendar, setShowCalendar] = useState(false);
+    {
+      id: 2,
+      driver: "Bob Smith",
+      date: "2025-07-03",
+      amount: 30.0,
+      status: "Paid",
+    },
+    {
+      id: 3,
+      driver: "Charlie Lee",
+      date: "2025-07-02",
+      amount: 50.75,
+      status: "Pending",
+    },
+    {
+      id: 4,
+      driver: "Diana Adams",
+      date: "2025-07-01",
+      amount: 25.0,
+      status: "Paid",
+    },
+    {
+      id: 5,
+      driver: "Alice Johnson",
+      date: "2025-06-30",
+      amount: 60.0,
+      status: "Paid",
+    },
+    // add more as needed
+  ];
 
-  const toggleCalendar = () => setShowCalendar((prev) => !prev);
+  const [earnings, setEarnings] = useState([]);
+  const [filteredEarnings, setFilteredEarnings] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 3;
 
-  const formattedRange = `${format(range[0].startDate, "MMM d, yyyy")} - ${format(
-    range[0].endDate,
-    "MMM d, yyyy"
-  )}`;
+  useEffect(() => {
+    // load dummy data (replace with API call)
+    setEarnings(dummyEarnings);
+  }, []);
 
-  // Filter trips based on selected range
-  const filteredTrips = useMemo(() => {
-    return allTrips.filter((trip) =>
-      isWithinInterval(new Date(trip.date), {
-        start: range[0].startDate,
-        end: range[0].endDate,
-      })
+  // Apply filters + search
+  useEffect(() => {
+    let data = [...earnings];
+
+    // Search by driver name
+    if (searchTerm.trim()) {
+      data = data.filter((e) =>
+        e.driver.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by status
+    if (filterStatus !== "All") {
+      data = data.filter((e) => e.status === filterStatus);
+    }
+
+    // Filter by date range
+    if (filterDateFrom) {
+      data = data.filter((e) => new Date(e.date) >= new Date(filterDateFrom));
+    }
+    if (filterDateTo) {
+      data = data.filter((e) => new Date(e.date) <= new Date(filterDateTo));
+    }
+
+    setFilteredEarnings(data);
+    setCurrentPage(1); // reset to first page on filter change
+  }, [earnings, searchTerm, filterStatus, filterDateFrom, filterDateTo]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredEarnings.length / itemsPerPage);
+  const pagedData = filteredEarnings.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Toggle payment status between Paid and Pending
+  const toggleStatus = (id) => {
+    setEarnings((prev) =>
+      prev.map((e) =>
+        e.id === id
+          ? { ...e, status: e.status === "Paid" ? "Pending" : "Paid" }
+          : e
+      )
     );
-  }, [range]);
+  };
 
-  // Calculate earnings summary
-  const totalEarnings = filteredTrips.reduce((sum, t) => sum + t.fare, 0).toFixed(2);
-  const totalRides = filteredTrips.length;
-  const totalMinutes = filteredTrips.reduce((sum, t) => sum + t.duration, 0);
-  const totalHours = Math.round(totalMinutes / 60);
+  // Calculate total earnings shown in current filtered data
+  const totalEarnings = filteredEarnings.reduce(
+    (sum, e) => sum + e.amount,
+    0
+  );
 
   return (
-    <div className="p-6 mt-5 bg-gray-100 min-h-screen rounded-2xl relative">
-      {/* Header and Calendar Toggle */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4 md:mb-0">
-          Earnings Dashboard
-        </h1>
+    <div className="md:p-6 max-w-5xl mx-auto space-y-6">
+      <h1 className="text-3xl font-bold">Earnings Management</h1>
 
-        {/* Date and Year */}
-        <div className="pt-2 relative overflow-visible">
-          <button
-            onClick={toggleCalendar}
-            className="flex items-center gap-2 text-gray-700 text-sm font-medium border px-3 py-2 rounded-md shadow-sm bg-white hover:bg-gray-50"
-          >
-            <span>{formattedRange}</span>
-            <IoChevronDown className="text-base" />
-          </button>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-4 items-center">
+        <input
+          type="text"
+          placeholder="Search by driver name..."
+          className="border rounded px-3 py-2 flex-grow min-w-[200px]"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
 
-          {showCalendar && (
-            <div className="absolute mt-2 md:right-0 left-[0.2px] z-30 bg-white shadow-lg rounded-md md:p-2">
-              <DateRange
-                editableDateInputs={true}
-                onChange={(item) => setRange([item.selection])}
-                moveRangeOnFirstSelection={false}
-                ranges={range}
-                rangeColors={["#006FFF"]}
-              />
-            </div>
-          )}
-        </div>
+        <select
+          className="border rounded px-3 py-2"
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+        >
+          <option value="All">All Statuses</option>
+          <option value="Paid">Paid</option>
+          <option value="Pending">Pending</option>
+        </select>
+
+        <label>
+          From:{" "}
+          <input
+            type="date"
+            className="border rounded px-2 py-1"
+            value={filterDateFrom}
+            onChange={(e) => setFilterDateFrom(e.target.value)}
+          />
+        </label>
+
+        <label>
+          To:{" "}
+          <input
+            type="date"
+            className="border rounded px-2 py-1"
+            value={filterDateTo}
+            onChange={(e) => setFilterDateTo(e.target.value)}
+          />
+        </label>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <SummaryCard
-          icon={<FaDollarSign size={24} />}
-          color="green"
-          label="Total Earnings"
-          value={`$${totalEarnings}`}
-        />
-        <SummaryCard
-          icon={<FaCar size={24} />}
-          color="blue"
-          label="Rides Completed"
-          value={totalRides}
-        />
-        <SummaryCard
-          icon={<FaClock size={24} />}
-          color="purple"
-          label="Hours Online"
-          value={`${totalHours} hrs`}
-        />
+      {/* Total earnings summary */}
+      <div className="bg-gray-100 p-4 rounded shadow text-right font-semibold">
+        Total Earnings:{" "}
+        <span className="text-green-600">${totalEarnings.toFixed(2)}</span>
       </div>
 
-      {/* Recent Trips Table */}
-      <div className="bg-white shadow-xl rounded-2xl overflow-x-auto">
-        <table className="min-w-full table-auto">
-          <thead className="bg-gray-200 text-gray-700 text-sm uppercase">
-            <tr>
-              <th className="px-6 py-4 text-left">Date</th>
-              <th className="px-6 py-4 text-left">From</th>
-              <th className="px-6 py-4 text-left">To</th>
-              <th className="px-6 py-4 text-left">Fare</th>
-              <th className="px-6 py-4 text-left">Distance</th>
+      {/* Earnings Table */}
+      <div className="overflow-x-auto border rounded shadow bg-white">
+        <table className="min-w-full border-collapse border border-gray-300">
+          <thead>
+            <tr className="bg-gray-200">
+              <th className="border border-gray-300 px-4 py-2">Driver</th>
+              <th className="border border-gray-300 px-4 py-2">Date</th>
+              <th className="border border-gray-300 px-4 py-2">Amount ($)</th>
+              <th className="border border-gray-300 px-4 py-2">Status</th>
+              <th className="border border-gray-300 px-4 py-2">Actions</th>
             </tr>
           </thead>
-          <tbody className="text-gray-700">
-            {filteredTrips.length > 0 ? (
-              filteredTrips.map((trip, index) => (
-                <tr
-                  key={index}
-                  className="border-t hover:bg-gray-100 transition"
-                >
-                  <td className="px-6 py-4">
-                    {format(new Date(trip.date), "MMM d, yyyy")}
-                  </td>
-                  <td className="px-6 py-4">{trip.from}</td>
-                  <td className="px-6 py-4">{trip.to}</td>
-                  <td className="px-6 py-4">${trip.fare.toFixed(2)}</td>
-                  <td className="px-6 py-4">{trip.distance} km</td>
-                </tr>
-              ))
-            ) : (
+          <tbody>
+            {pagedData.length === 0 ? (
               <tr>
-                <td colSpan="5" className="text-center py-6 text-gray-400">
-                  No trips in selected date range.
+                <td
+                  colSpan={5}
+                  className="text-center py-6 text-gray-500 font-semibold"
+                >
+                  No earnings found.
                 </td>
               </tr>
+            ) : (
+              pagedData.map((earning) => (
+                <tr key={earning.id} className="hover:bg-gray-50">
+                  <td className="border border-gray-300 px-4 py-2">
+                    {earning.driver}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2">
+                    {earning.date}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2 text-right">
+                    {earning.amount.toFixed(2)}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2 text-center">
+                    <span
+                      className={`inline-block px-2 py-1 rounded text-white text-sm ${
+                        earning.status === "Paid"
+                          ? "bg-green-600"
+                          : "bg-yellow-500"
+                      }`}
+                    >
+                      {earning.status}
+                    </span>
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2 text-center">
+                    <button
+                      onClick={() => toggleStatus(earning.id)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
+                      title="Toggle Paid/Pending"
+                    >
+                      Toggle Status
+                    </button>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
       </div>
-    </div>
-  );
-};
 
-const SummaryCard = ({ icon, color, label, value }) => {
-  const bg = {
-    green: "bg-green-100 text-green-600",
-    blue: "bg-blue-100 text-blue-600",
-    purple: "bg-purple-100 text-purple-600",
-  }[color];
-
-  return (
-    <div className="bg-white shadow-lg rounded-2xl p-5 flex items-center gap-4">
-      <div className={`${bg} p-3 rounded-full`}>{icon}</div>
-      <div>
-        <h2 className="text-sm text-gray-500">{label}</h2>
-        <p className="text-xl font-semibold">{value}</p>
-      </div>
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center space-x-3 mt-4">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            className="px-3 py-1 rounded border disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            className="px-3 py-1 rounded border disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

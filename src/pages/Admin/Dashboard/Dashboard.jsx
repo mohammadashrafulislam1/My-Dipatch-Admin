@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  BiSupport,
   BiWalletAlt,
 } from "react-icons/bi";
 import {
@@ -59,6 +60,7 @@ const Dashboard = () => {
     "/dashboard/map": "Map",
     "/dashboard/chat": "Chat",
     "/dashboard/wallet": "Wallet",
+    "/dashboard/support": "Support",
   };
   const matchedPath = Object.keys(pageTitles)
     .sort((a, b) => b.length - a.length)
@@ -77,6 +79,7 @@ const Dashboard = () => {
     { path: "earnings", label: "Earnings", icon: <BsCashCoin /> },
     { path: "chat", label: "Chat", icon: <BsChatLeftDots /> },
     { path: "wallet", label: "Wallet", icon: <BiWalletAlt /> },
+    { path: "support", label: "Support", icon: <BiSupport /> },
   ];
 
   return (

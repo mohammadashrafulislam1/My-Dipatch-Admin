@@ -38,7 +38,7 @@ const Support = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="md:p-6">
       <h1 className="text-2xl font-bold mb-4">Support Tickets</h1>
       {tickets.length === 0 ? (
         <p>No support tickets found.</p>

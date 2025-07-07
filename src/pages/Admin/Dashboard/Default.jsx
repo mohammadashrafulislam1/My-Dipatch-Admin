@@ -22,6 +22,45 @@ import {
 import ReviewCarousel from "../../../Components/ReviewCarousel";
 import { useMediaQuery } from "react-responsive";
 
+const statsData = [
+  {
+    label: "Total Orders",
+    value: 75,
+    icon: <FaClipboardList className="text-[#006FFF]" />,
+    trend: -5,
+    trendIcon: <FaArrowAltCircleDown />,
+    trendColor: "red-500",
+    bgGradient: "from-blue-100 to-blue-200",
+  },
+  {
+    label: "Total Delivered",
+    value: 85,
+    icon: <TbTruckDelivery className="text-[#006FFF]" />,
+    trend: 8,
+    trendIcon: <FaArrowAltCircleUp />,
+    trendColor: "green-500",
+    bgGradient: "from-blue-100 to-blue-200",
+  },
+  {
+    label: "Total Customers",
+    value: 95,
+    icon: <GrDeliver className="text-[#006FFF]" />,
+    trend: 2,
+    trendIcon: <FaArrowAltCircleUp />,
+    trendColor: "green-500",
+    bgGradient: "from-blue-100 to-blue-200",
+  },
+  {
+    label: "Total Revenue",
+    value: "$175",
+    icon: <FaSackDollar className="text-[#006FFF]" />,
+    trend: 12,
+    trendIcon: <FaArrowAltCircleUp />,
+    trendColor: "green-500",
+    bgGradient: "from-blue-100 to-blue-200",
+  },
+];
+
 const pieData = {
   totalOrder: 81,
   customerGrowth: 22,
@@ -134,67 +173,33 @@ const Default = () => {
 
 
     {/* Stats */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:gap-5 gap-3 mt-6">
-  {/* Card 1 */}
-  <div className="stat bg-white flex items-center gap-4 lg:p-4 p-2 rounded-xl shadow-sm">
-    <div className="stat-title bg-[#006eff2a] rounded-full lg:w-[70px] lg:h-[70px] w-[50px] h-[50px] flex items-center justify-center relative">
-      <FaClipboardList className="lg:text-[40px] text-[30px] text-[#006FFF]" />
-      <FaArrowAltCircleDown
-        className="bg-[#FF0500] text-white lg:text-[20px] text-[15px] px-1 rounded-full absolute lg:top-[14px] 
-        top-[8px] lg:right-[8px] right-[10px]"
-      />
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mt-6">
+      {statsData.map(({ label, value, icon, trend, trendIcon, trendColor, bgGradient }, i) => (
+        <div
+          key={i}
+          className={`stat flex items-center gap-4 p-5 rounded-xl shadow-md bg-gradient-to-br ${bgGradient} hover:shadow-lg transition-shadow duration-300 cursor-pointer`}
+          title={`Change: ${trend > 0 ? "+" : ""}${trend}% from last period`}
+        >
+          <div className="stat-icon relative rounded-full bg-white w-16 h-16 flex items-center justify-center text-3xl">
+            {icon}
+            <span
+              className={`absolute top-1 right-1 rounded-full text-white p-[2px] text-xs bg-${trendColor} flex items-center justify-center w-6 h-6`}
+              aria-label={`${trend > 0 ? "increase" : "decrease"}`}
+            >
+              {trendIcon}
+              <span className="sr-only">{trend > 0 ? "Increase" : "Decrease"}</span>
+            </span>
+          </div>
+          <div>
+            <div className="stat-value text-2xl font-semibold">{value}</div>
+            <div className="stat-label text-gray-700 font-medium">{label}</div>
+            <div
+              className={`text-sm mt-1 font-light text-${trendColor}`}
+            >{`${trend > 0 ? "+" : ""}${trend}% vs last week`}</div>
+          </div>
+        </div>
+      ))}
     </div>
-    <div>
-      <div className="stat-value">75</div>
-      <div className="poppins-light text-[12px]">Total Orders</div>
-    </div>
-  </div>
-
-  {/* Card 2 */}
-  <div className="stat bg-white flex items-center gap-4 lg:p-4 p-2 rounded-xl shadow-sm">
-    <div className="stat-title bg-[#006eff2a] rounded-full lg:w-[70px] lg:h-[70px] w-[50px] h-[50px] flex items-center justify-center relative">
-      <TbTruckDelivery className="lg:text-[40px] text-[30px] text-[#006FFF]" />
-      <FaCircleCheck
-        className="bg-[#008000] text-white lg:text-[20px] text-[15px] px-1 rounded-full absolute lg:top-[14px] 
-        top-[8px] lg:right-[8px] right-[10px]"
-      />
-    </div>
-    <div>
-      <div className="stat-value">85</div>
-      <div className="poppins-light text-[12px]">Total Delivered</div>
-    </div>
-  </div>
-
-  {/* Card 3 */}
-  <div className="stat bg-white flex items-center gap-4 lg:p-4 p-2 rounded-xl shadow-sm">
-    <div className="stat-title bg-[#006eff2a] rounded-full lg:w-[70px] lg:h-[70px] w-[50px] h-[50px] flex items-center justify-center relative">
-      <GrDeliver className="lg:text-[40px] text-[30px] text-[#006FFF]" />
-      <MdCancel
-        className="bg-[#F7C604] text-white lg:text-[20px] text-[15px] px-1 rounded-full absolute lg:top-[14px] 
-        top-[8px] lg:right-[8px] right-[10px]"
-      />
-    </div>
-    <div>
-      <div className="stat-value">95</div>
-      <div className="poppins-light text-[12px]">Total Customers</div>
-    </div>
-  </div>
-
-  {/* Card 4 */}
-  <div className="stat bg-white flex items-center gap-4 lg:p-4 p-2 rounded-xl shadow-sm">
-    <div className="stat-title bg-[#006eff2a] rounded-full lg:w-[70px] lg:h-[70px] w-[50px] h-[50px] flex items-center justify-center relative">
-      <FaSackDollar className="lg:text-[40px] text-[30px] text-[#006FFF]" />
-      <FaArrowAltCircleUp
-        className="bg-[#008000] text-white lg:text-[20px] text-[15px] px-1 rounded-full absolute lg:top-[14px] 
-        top-[8px] lg:right-[8px] right-[10px]"
-      />
-    </div>
-    <div>
-      <div className="stat-value">$175</div>
-      <div className="poppins-light text-[12px]">Total Revenue</div>
-    </div>
-  </div>
-</div>
 
 {/* charts */}
 <div className="flex lg:flex-nowrap flex-wrap gap-6 mt-6">

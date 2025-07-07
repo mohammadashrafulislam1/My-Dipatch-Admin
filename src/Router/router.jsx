@@ -12,7 +12,6 @@ import Signup from "../pages/Authentication/Signup";
 import Profile from "../pages/Admin/Profile/Profile";
 import Settings from "../pages/Admin/Profile/Setting";
 import Notification from "../pages/Admin/Profile/Notification";
-import Admin from "../pages/Admin/Admin";
 import Tasks from "../pages/Admin/Dashboard/Tasks";
 import Pricing from "../pages/Admin/Dashboard/Pricing";
 import Support from "../pages/Admin/Dashboard/Support";
@@ -21,7 +20,7 @@ import TermsPrivacyPolicy from "../pages/Admin/Dashboard/Terms & Privacy Policy"
 
 export const router = createBrowserRouter([
     {
-        path:'/dashboard',
+        path:'/',
         element:<Dashboard/>,
         errorElement:<h1>err</h1>,
         children:[
@@ -86,11 +85,6 @@ export const router = createBrowserRouter([
                 element:<Notification/>
             },
         ]
-    },
-    {
-        path:'/',
-        element:<Admin/>,
-        errorElement:<h1>err</h1>
     },
     {
         path:'/login',

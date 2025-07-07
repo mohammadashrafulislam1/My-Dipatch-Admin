@@ -52,18 +52,18 @@ const Dashboard = () => {
   const [showSettings, setShowSettings] = useState(false);
   
   const pageTitles = {
-    "/dashboard": "Dashboard",
-    "/dashboard/orders": "Order Lists",
-    "/dashboard/drivers": "Drivers",
-    "/dashboard/customers": "Customers",
-    "/dashboard/analytics": "Analytics",
-    "/dashboard/tasks": "Task Management",
-    "/dashboard/earnings": "Earnings",
-    "/dashboard/map": "Map",
-    "/dashboard/chat": "Chat",
-    "/dashboard/wallet": "Wallet",
-    "/dashboard/TermsPrivacyPolicy": "Terms & Privacy Policy",
-    "/dashboard/support": "Support",
+    "/": "Dashboard",
+    "/orders": "Order Lists",
+    "/drivers": "Drivers",
+    "/customers": "Customers",
+    "/analytics": "Analytics",
+    "/tasks": "Task Management",
+    "/earnings": "Earnings",
+    "/map": "Map",
+    "/chat": "Chat",
+    "/wallet": "Wallet",
+    "/TermsPrivacyPolicy": "Terms & Privacy Policy",
+    "/support": "Support",
   };
   const matchedPath = Object.keys(pageTitles)
     .sort((a, b) => b.length - a.length)
@@ -72,7 +72,7 @@ const Dashboard = () => {
   const currentTitle = pageTitles[matchedPath] || "Dashboard";
 
   const menuItems = [
-    { path: "/dashboard", label: "Dashboard", icon: <SlHome /> },
+    { path: "/", label: "Dashboard", icon: <SlHome /> },
     { path: "drivers", label: "Drivers", icon: <IoCarSportOutline /> },
     { path: "tasks", label: "Task Management", icon: <GoTasklist  /> },
     { path: "orders", label: "Orders", icon: <TfiAlignLeft /> },

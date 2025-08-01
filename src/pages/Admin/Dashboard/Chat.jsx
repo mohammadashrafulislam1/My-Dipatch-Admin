@@ -181,7 +181,7 @@ const Chat = () => {
                   <img
                     src={msg.file}
                     alt={msg.fileName}
-                    className="w-[300px] h-[250px]  rounded-md mt-1 object-cover"
+                    className="w-[300px] h-[250px]  rounded-md mt-1 object-cover top-0"
                   />
                 )}
               

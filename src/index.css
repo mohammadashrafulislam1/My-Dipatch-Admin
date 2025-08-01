@@ -125,8 +125,20 @@
   visibility: visible !important;
   height: auto !important;
 }
+html.dark input {
+  @apply bg-white text-black border-gray-400;
+}
+html.dark textarea {
+  @apply bg-white text-black border-gray-400;
+}
 
 
+html.dark select {
+  @apply bg-white text-black border-gray-400;
+}
+html.dark option {
+  @apply bg-white text-black border-gray-400;
+}
 
 @tailwind base;
 @tailwind components;

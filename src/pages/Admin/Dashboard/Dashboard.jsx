@@ -212,7 +212,7 @@ const Dashboard = () => {
     <button
       onClick={() => {
         setShowNotifications(false);
-        window.location.href = "/dashboard/notifications";
+        window.location.href = "/notifications";
       }}
       className="block w-full text-center text-sm text-blue-600 py-3 hover:bg-gray-100 transition"
     >
@@ -230,7 +230,7 @@ const Dashboard = () => {
             key={user.id}
             onClick={() => {
               setShowMessages(false);
-              window.location.href = `/dashboard/chat?user=${user.id}`;
+              window.location.href = `/chat?user=${user.id}`;
             }}
             className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-100 
             `}
@@ -264,19 +264,19 @@ const Dashboard = () => {
     <ul className="text-sm text-gray-700">
       <li
         className="flex items-center gap-2 p-3 hover:bg-gray-100 cursor-pointer"
-        onClick={() => window.location.href = "/dashboard/profile"}
+        onClick={() => window.location.href = "/profile"}
       >
         <FiUsers /> Profile
       </li>
       <li
         className="flex items-center gap-2 p-3 hover:bg-gray-100 cursor-pointer"
-        onClick={() => window.location.href = "/dashboard/settings"}
+        onClick={() => window.location.href = "/settings"}
       >
         <FiSettings /> Settings
       </li>
       <li
         className="flex items-center gap-2 p-3 hover:bg-gray-100 cursor-pointer"
-        onClick={() => window.location.href = "/dashboard/earnings"}
+        onClick={() => window.location.href = "/earnings"}
       >
         <BiWalletAlt /> Earnings
       </li>

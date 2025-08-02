@@ -74,7 +74,7 @@ const Chat = () => {
 
   const handleBack = () => {
     setSelectedUser(null);
-    navigate("/dashboard/chat"); // clear query param
+    navigate("/chat"); // clear query param
     setSelectedFile(null);
     setMessage("");
   };

@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { IoEyeOffSharp, IoEyeSharp } from "react-icons/io5";
+import axios from "axios";
+import useAuth from "../../Components/useAuth";
 
 const Signup = () => {
+  const { signup, login } = useAuth(); // ⬅️ FIXED
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -17,15 +21,43 @@ const Signup = () => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Add validation or API call here
-    console.log("Form Submitted:", formData);
+
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+
+    const [firstName, ...rest] = formData.name.split(" ");
+    const lastName = rest.join(" ");
+
+    try {
+      // 🔥 CREATE ADMIN USING ADMIN AUTHPROVIDER (Not axios)
+      await signup({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+      });
+
+      // 🔥 AUTO LOGIN
+      await login({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      window.location.href = "/";
+    } catch (err) {
+      console.log(err);
+      alert(err.response?.data?.message || "Signup failed");
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F4F9FF] px-4">
       <div className="w-full max-w-md bg-white md:p-8 p-4 rounded-2xl shadow-2xl">
+
         <img
           src="https://i.ibb.co/TxC947Cw/thumbnail-Image-2025-07-09-at-2-10-AM-removebg-preview.png"
           alt="Logo"
@@ -36,15 +68,15 @@ const Signup = () => {
           Sign Up As Admin
         </h2>
 
-        {/* Signup Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
+
           <input
             type="text"
             name="name"
             placeholder="Full Name"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006FFF]"
             value={formData.name}
             onChange={handleChange}
+            className="w-full px-4 py-2 border rounded-lg"
             required
           />
 
@@ -52,9 +84,9 @@ const Signup = () => {
             type="email"
             name="email"
             placeholder="Email Address"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006FFF]"
             value={formData.email}
             onChange={handleChange}
+            className="w-full px-4 py-2 border rounded-lg"
             required
           />
 
@@ -62,44 +94,44 @@ const Signup = () => {
             type="tel"
             name="phone"
             placeholder="Phone Number"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006FFF]"
             value={formData.phone}
             onChange={handleChange}
+            className="w-full px-4 py-2 border rounded-lg"
             required
           />
 
-          {/* Password Field with Toggle */}
+          {/* PASSWORD */}
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               name="password"
               placeholder="Password"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006FFF]"
+              className="w-full px-4 py-2 border rounded-lg"
               value={formData.password}
               onChange={handleChange}
               required
             />
             <div
-              className="absolute top-2.5 right-4 text-xl text-gray-600 cursor-pointer"
+              className="absolute top-2.5 right-4 cursor-pointer"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <IoEyeOffSharp /> : <IoEyeSharp />}
             </div>
           </div>
 
-          {/* Confirm Password Field with Toggle */}
+          {/* CONFIRM PASSWORD */}
           <div className="relative">
             <input
               type={showConfirm ? "text" : "password"}
               name="confirmPassword"
               placeholder="Confirm Password"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006FFF]"
+              className="w-full px-4 py-2 border rounded-lg"
               value={formData.confirmPassword}
               onChange={handleChange}
               required
             />
             <div
-              className="absolute top-2.5 right-4 text-xl text-gray-600 cursor-pointer"
+              className="absolute top-2.5 right-4 cursor-pointer"
               onClick={() => setShowConfirm(!showConfirm)}
             >
               {showConfirm ? <IoEyeOffSharp /> : <IoEyeSharp />}
@@ -108,25 +140,12 @@ const Signup = () => {
 
           <button
             type="submit"
-            className="w-full bg-[#008000] text-white py-2 rounded-full font-semibold hover:bg-green-700 transition duration-200"
+            className="w-full bg-[#008000] text-white py-2 rounded-full font-semibold"
           >
             Sign Up
           </button>
         </form>
 
-        {/* Footer Links */}
-        <p className="text-center text-sm text-gray-600 mt-4">
-          Already have an account?{" "}
-          <a href="/login" className="text-[#006FFF] font-medium hover:underline">
-            Log in
-          </a>
-        </p>
-        <p className="text-center text-sm text-gray-600 mt-2">
-          Want to order?{" "}
-          <a href="/signup" className="text-[#006FFF] font-medium hover:underline">
-            Signup as Customer
-          </a>
-        </p>
       </div>
     </div>
   );

@@ -27,6 +27,7 @@ import { TbBrandGoogleAnalytics } from "react-icons/tb";
 import { TfiAlignLeft } from "react-icons/tfi";
 import { VscSignOut } from "react-icons/vsc";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import useAuth from "../../../Components/useAuth";
 
 const notifications = [
   { id: 1, text: "You have a new message from Alex.", timeAgo: "2h ago" },
@@ -46,6 +47,8 @@ const messages = [
 
 const Dashboard = () => {
   const location = useLocation();
+  const {admin} = useAuth()
+  console.log("user", admin)
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
@@ -294,8 +297,8 @@ const Dashboard = () => {
       {/* Content Area */}
       <div className="flex-1 lg:ml-72 min-h-screen bg-[#FDFDFD] overflow-hidden">
         {/* Topbar */}
-        <div className="absolute md:ml-6 ml-12 mr-2 fixed md:bg-[#FDFDFD] top-6 md:top-0 left-0 right-0 h-14 
-        flex flex-col-reverse md:flex-row md:items-center items-end justify-between lg:px-6 md:pr-3 md:pl-14 lg:pl-0 z-10 lg:left-72">
+        <div className="absolute fixed md:bg-[#FDFDFD] top-6 md:top-0 left-0 right-0 h-14 
+        flex flex-col-reverse md:flex-row md:items-center items-end justify-between lg:px-6 md:pr-3 md:pl-14 lg:pl-6 z-10 lg:left-72">
           <h1 className="text-xl font-semibold text-gray-800 md:mt-0 mt-2">{currentTitle}</h1>
           <div className="flex items-center md:gap-4 text-gray-600">
            <div className="flex gap-4">

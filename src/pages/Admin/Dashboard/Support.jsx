@@ -1,268 +1,438 @@
+// ----- SAME IMPORTS -----
 import { useState, useEffect } from "react";
+import axios from "axios";
+import { endPoint } from "../../../Components/ForAPIs";
+import useAuth from "../../../Components/useAuth";
+import {
+  FiUser,
+  FiMail,
+  FiClock,
+  FiMessageSquare,
+} from "react-icons/fi";
 
 const Support = () => {
   const [tickets, setTickets] = useState([]);
-
-  // FAQ states
   const [faqs, setFaqs] = useState([]);
+  const [usersMap, setUsersMap] = useState({});
+  const [loadingTickets, setLoadingTickets] = useState(false);
+  const [loadingFaqs, setLoadingFaqs] = useState(false);
+
+  const { user } = useAuth();
+
+  // Add FAQ
+  const [newCategory, setNewCategory] = useState("customer");
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
-  const [newCategory, setNewCategory] = useState("customer"); // Default category
-  const [editFaqId, setEditFaqId] = useState(null);
+
+  // Edit FAQ
+  const [editId, setEditId] = useState(null);
   const [editQuestion, setEditQuestion] = useState("");
   const [editAnswer, setEditAnswer] = useState("");
   const [editCategory, setEditCategory] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("customer");
 
+  // Reply modal
+  const [replyModal, setReplyModal] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [selectedTicket, setSelectedTicket] = useState(null);
+
+  // Filter FAQ
+  const [faqFilter, setFaqFilter] = useState("all");
+
+  // ------------------------------
+  // LOAD DATA
+  // ------------------------------
   useEffect(() => {
-    // Dummy tickets
-    const dummyTickets = [
-      {
-        id: 1,
-        user: "John Doe",
-        issue: "Driver did not show up",
-        status: "Open",
-        createdAt: "2025-07-05",
-      },
-      {
-        id: 2,
-        user: "Jane Smith",
-        issue: "App crashes on login",
-        status: "Resolved",
-        createdAt: "2025-07-04",
-      },
-    ];
-    setTickets(dummyTickets);
-
-    // Dummy FAQs with categories
-    const dummyFaqs = [
-      {
-        id: 1,
-        question: "How to reset my password?",
-        answer: "Go to settings and click 'Reset Password'.",
-        category: "customer",
-      },
-      {
-        id: 2,
-        question: "How to contact support?",
-        answer: "You can email support@example.com or call 123-456-7890.",
-        category: "customer",
-      },
-      {
-        id: 3,
-        question: "How do I accept a ride request?",
-        answer: "Go to the driver app and tap 'Accept' on incoming requests.",
-        category: "driver",
-      },
-      {
-        id: 4,
-        question: "How to update my vehicle info?",
-        answer: "In driver settings, update vehicle details and save.",
-        category: "driver",
-      },
-    ];
-    setFaqs(dummyFaqs);
+    loadTickets();
+    loadFaqs();
+    loadUsers();
   }, []);
 
-  // ...closeTicket, openReplyModal, closeReplyModal, submitReply same as before...
+  // Load Tickets
+  const loadTickets = async () => {
+    try {
+      setLoadingTickets(true);
+      const res = await axios.get(`${endPoint}/support/admin`, {
+        withCredentials: true,
+      });
+      setTickets(res.data?.tickets || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingTickets(false);
+    }
+  };
 
-  // FAQ handlers with category
-  const addFaq = () => {
+  // Load FAQs
+  const loadFaqs = async () => {
+    try {
+      setLoadingFaqs(true);
+      const res = await axios.get(`${endPoint}/faqs`);
+      const list = [...(res.data.customer || []), ...(res.data.driver || [])];
+      setFaqs(list);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingFaqs(false);
+    }
+  };
+
+  // Load Users
+  const loadUsers = async () => {
+    try {
+      const res = await axios.get(`${endPoint}/user/`, {
+        withCredentials: true,
+      });
+
+      let users = [];
+      if (Array.isArray(res.data?.users)) users = res.data.users;
+      else if (Array.isArray(res.data)) users = res.data;
+
+      const map = {};
+      users.forEach((u) => (map[u._id] = u));
+      setUsersMap(map);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Extract User Info
+  const getUserInfo = (ticket) => {
+    const info = usersMap[ticket.userId] || {};
+    const fullName =
+      `${info.firstname || info.firstName || ""} ${
+        info.lastname || info.lastName || ""
+      }`.trim() || "Unknown User";
+
+    return {
+      fullName,
+      email: info.email || "Unknown email",
+    };
+  };
+
+  // Open Reply Modal
+  const openReplyModal = (ticket) => {
+    setSelectedTicket(ticket);
+    setReplyText(ticket.reply || "");
+    setReplyModal(true);
+  };
+
+  // Submit Reply
+  const submitReply = async () => {
+    if (!replyText.trim()) return;
+
+    await axios.put(
+      `${endPoint}/admin/support/tickets/admin`,
+      {
+        ticketId: selectedTicket._id,
+        reply: replyText,
+        status: "Resolved",
+      },
+      { withCredentials: true }
+    );
+
+    setReplyModal(false);
+    setReplyText("");
+    loadTickets();
+  };
+
+  // Add FAQ
+  const addFaq = async () => {
     if (!newQuestion.trim() || !newAnswer.trim()) {
-      alert("Please enter both question and answer.");
+      alert("Fill all fields!");
       return;
     }
-    const newFaq = {
-      id: Date.now(),
-      question: newQuestion,
-      answer: newAnswer,
-      category: newCategory,
-    };
-    setFaqs((prev) => [...prev, newFaq]);
+
+    await axios.post(
+      `${endPoint}/faqs`,
+      { category: newCategory, question: newQuestion, answer: newAnswer },
+      { withCredentials: true }
+    );
+
     setNewQuestion("");
     setNewAnswer("");
-    setNewCategory("customer");
+    loadFaqs();
   };
 
-  const startEditFaq = (faq) => {
-    setEditFaqId(faq.id);
-    setEditQuestion(faq.question);
-    setEditAnswer(faq.answer);
-    setEditCategory(faq.category);
-  };
-
-  const cancelEdit = () => {
-    setEditFaqId(null);
-    setEditQuestion("");
-    setEditAnswer("");
-    setEditCategory("");
-  };
-
-  const saveEditFaq = () => {
-    if (!editQuestion.trim() || !editAnswer.trim()) {
-      alert("Please enter both question and answer.");
-      return;
-    }
-    setFaqs((prev) =>
-      prev.map((f) =>
-        f.id === editFaqId
-          ? { ...f, question: editQuestion, answer: editAnswer, category: editCategory }
-          : f
-      )
+  // Edit FAQ
+  const saveEditFaq = async () => {
+    await axios.put(
+      `${endPoint}/faqs/${editId}`,
+      { question: editQuestion, answer: editAnswer, category: editCategory },
+      { withCredentials: true }
     );
-    cancelEdit();
+
+    setEditId(null);
+    loadFaqs();
   };
 
-  const deleteFaq = (id) => {
-    if (window.confirm("Are you sure you want to delete this FAQ?")) {
-      setFaqs((prev) => prev.filter((f) => f.id !== id));
-    }
+  // Delete FAQ
+  const deleteFaq = async (id) => {
+    if (!window.confirm("Delete this FAQ?")) return;
+    await axios.delete(`${endPoint}/faqs/${id}`, { withCredentials: true });
+    loadFaqs();
   };
 
-  // Filter faqs by selectedCategory
-  const filteredFaqs = faqs.filter((f) => f.category === selectedCategory);
+  const filteredFaqs = faqs.filter((faq) => {
+    if (faqFilter === "all") return true;
+    return faq.category === faqFilter;
+  });
 
+  // ------------------------------
+  // UI
+  // ------------------------------
   return (
-    <div className="md:p-6 max-w-5xl mx-auto">
-      {/* ...tickets and reply modal unchanged, omitted for brevity... */}
+    <div className="md:p-6 max-w-6xl mx-auto space-y-10">
 
-      {/* FAQ Section */}
-      <div className="mt-10">
-        <h1 className="text-2xl font-bold mb-4">Manage FAQs</h1>
+      {/* HEADER */}
+      <h1 className="text-3xl font-bold">Support Center</h1>
 
-        {/* Category Filter Tabs */}
-        <div className="mb-6 flex gap-4">
-          <button
-            className={`px-4 py-2 rounded ${
-              selectedCategory === "customer"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200"
-            }`}
-            onClick={() => setSelectedCategory("customer")}
-          >
-            Customer FAQs
-          </button>
-          <button
-            className={`px-4 py-2 rounded ${
-              selectedCategory === "driver" ? "bg-blue-600 text-white" : "bg-gray-200"
-            }`}
-            onClick={() => setSelectedCategory("driver")}
-          >
-            Driver FAQs
-          </button>
+      {/* ==================== SUPPORT TICKETS (TOP) ==================== */}
+      <div className="bg-white rounded-2xl shadow p-6">
+        <h2 className="text-xl font-semibold mb-4">Support Tickets</h2>
+
+        <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2">
+          {tickets.map((ticket) => {
+            const info = getUserInfo(ticket);
+
+            return (
+              <div
+                key={ticket._id}
+                className="border rounded-xl p-4 bg-gray-50 hover:bg-white transition shadow-sm"
+              >
+                {/* User info */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-10 w-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-lg font-semibold">
+                    {info.fullName[0]?.toUpperCase()}
+                  </div>
+
+                  <div>
+                    <p className="font-semibold flex items-center gap-1 text-sm">
+                      <FiUser /> {info.fullName}
+                    </p>
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <FiMail /> {info.email}
+                    </p>
+                  </div>
+
+                  <span
+                    className={`ml-auto px-3 py-1 rounded-full text-xs ${
+                      ticket.userType === "driver"
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-green-100 text-green-700"
+                    }`}
+                  >
+                    {ticket.userType.toUpperCase()}
+                  </span>
+                </div>
+
+                {/* Issue */}
+                <p className="text-sm text-gray-700 flex gap-2 mb-2">
+                  <FiMessageSquare className="text-gray-500 mt-[2px]" />
+                  {ticket.issue}
+                </p>
+
+                {/* Footer */}
+                <div className="flex justify-between text-xs mt-2">
+                  <span className="flex items-center gap-1 text-gray-500">
+                    <FiClock />{" "}
+                    {new Date(ticket.createdAt).toLocaleString()}
+                  </span>
+
+                  <span
+                    className={`px-3 py-1 rounded-full ${
+                      ticket.status === "open"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-green-100 text-green-700"
+                    }`}
+                  >
+                    {ticket.status.toUpperCase()}
+                  </span>
+
+                  <button
+                    onClick={() => openReplyModal(ticket)}
+                    className="bg-blue-600 text-white px-2 py-1 rounded-md text-xs"
+                  >
+                    Reply
+                  </button>
+                </div>
+
+                {ticket.reply && (
+                  <div className="mt-2 text-xs border-t pt-2 text-gray-600">
+                    <strong>Admin Reply:</strong> {ticket.reply}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Add FAQ */}
-        <div className="bg-white p-4 rounded shadow mb-6">
-          <h2 className="text-lg font-semibold mb-2">Add New FAQ</h2>
+      {/* ==================== ADD FAQ (MIDDLE) ==================== */}
+      <div className="bg-white rounded-2xl shadow p-6 border border-blue-50">
+        <h2 className="text-xl font-semibold mb-4">Add FAQ</h2>
+
+        <div className="mb-3 w-[30px]">
           <select
+            className="border rounded px-2 py-1 text-sm"
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
-            className="mb-2 p-2 border border-gray-300 rounded focus:outline-blue-500"
           >
             <option value="customer">Customer</option>
             <option value="driver">Driver</option>
           </select>
+  </div>
           <input
-            type="text"
+            className="border h-[40px] w-full rounded px-2 py-1 text-md"
             placeholder="Question"
             value={newQuestion}
             onChange={(e) => setNewQuestion(e.target.value)}
-            className="w-full mb-2 p-2 border border-gray-300 rounded focus:outline-blue-500"
           />
-          <textarea
-            rows={3}
-            placeholder="Answer"
-            value={newAnswer}
-            onChange={(e) => setNewAnswer(e.target.value)}
-            className="w-full mb-2 p-2 border border-gray-300 rounded focus:outline-blue-500"
-          />
-          <button
-            onClick={addFaq}
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+      
+
+        <textarea
+          className="border rounded w-full px-2 py-1 text-md mt-3"
+          placeholder="Answer"
+          rows="3"
+          value={newAnswer}
+          onChange={(e) => setNewAnswer(e.target.value)}
+        />
+
+       <button
+  onClick={addFaq}
+  className="mt-4 w-1/2 mx-auto block bg-blue-600 hover:bg-blue-700 
+             text-white px-3 py-1.5 rounded-md text-xs font-medium shadow-sm
+             transition-all duration-150"
+>
+  Add FAQ
+</button>
+
+      </div>
+
+      {/* ==================== MANAGE FAQS (BOTTOM) ==================== */}
+      <div className="bg-white rounded-2xl shadow p-6">
+        <div className="flex justify-between">
+          <h2 className="text-xl font-semibold">Manage FAQs</h2>
+
+          <select
+            className="border px-3 py-1 text-sm rounded"
+            value={faqFilter}
+            onChange={(e) => setFaqFilter(e.target.value)}
           >
-            Add FAQ
-          </button>
+            <option value="all">All</option>
+            <option value="customer">Customer</option>
+            <option value="driver">Driver</option>
+          </select>
         </div>
 
-        {/* FAQ List */}
-        <div className="bg-white p-4 rounded shadow">
-          {filteredFaqs.length === 0 ? (
-            <p>No FAQs in this category yet.</p>
-          ) : (
-            <ul>
-              {filteredFaqs.map((faq) => (
-                <li
-                  key={faq.id}
-                  className="border-b last:border-none py-3 flex flex-col md:flex-row md:justify-between md:items-center"
-                >
-                  {editFaqId === faq.id ? (
-                    <>
-                      <div className="flex-1 mb-2 md:mb-0 md:mr-4">
-                        <select
-                          value={editCategory}
-                          onChange={(e) => setEditCategory(e.target.value)}
-                          className="mb-2 p-2 border border-gray-300 rounded focus:outline-blue-500"
-                        >
-                          <option value="customer">Customer</option>
-                          <option value="driver">Driver</option>
-                        </select>
-                        <input
-                          type="text"
-                          value={editQuestion}
-                          onChange={(e) => setEditQuestion(e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded mb-2 focus:outline-blue-500"
-                        />
-                        <textarea
-                          rows={2}
-                          value={editAnswer}
-                          onChange={(e) => setEditAnswer(e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded focus:outline-blue-500"
-                        />
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={saveEditFaq}
-                          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={cancelEdit}
-                          className="bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex-1 mb-2 md:mb-0 md:mr-4">
-                        <p className="font-semibold">{faq.question}</p>
-                        <p className="text-gray-700">{faq.answer}</p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => startEditFaq(faq)}
-                          className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteFaq(faq.id)}
-                          className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="mt-4 space-y-3 max-h-[400px] overflow-y-auto">
+          {filteredFaqs.map((faq) => (
+            <div key={faq._id} className="border rounded-lg bg-gray-50 p-4">
+              {editId === faq._id ? (
+                <>
+                  <select
+                    className="border text-sm px-2 py-1 rounded w-full mb-2"
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                  >
+                    <option value="customer">Customer</option>
+                    <option value="driver">Driver</option>
+                  </select>
+
+                  <input
+                    className="border w-full rounded px-2 py-1 text-sm mb-2"
+                    value={editQuestion}
+                    onChange={(e) => setEditQuestion(e.target.value)}
+                  />
+
+                  <textarea
+                    className="border w-full rounded px-2 py-1 text-sm mb-2"
+                    rows={3}
+                    value={editAnswer}
+                    onChange={(e) => setEditAnswer(e.target.value)}
+                  />
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={saveEditFaq}
+                      className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditId(null)}
+                      className="bg-gray-400 text-white px-2 py-1 rounded text-xs"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold">{faq.question}</p>
+                  <p className="text-sm text-gray-700">{faq.answer}</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Category: {faq.category}
+                  </p>
+
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => {
+                        setEditId(faq._id);
+                        setEditQuestion(faq.question);
+                        setEditAnswer(faq.answer);
+                        setEditCategory(faq.category);
+                      }}
+                      className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() => deleteFaq(faq._id)}
+                      className="bg-red-600 text-white px-2 py-1 rounded text-xs"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
         </div>
       </div>
+
+      {/* ==================== REPLY MODAL ==================== */}
+      {replyModal && (
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-xl shadow w-[350px]">
+            <h2 className="font-semibold">Reply to Ticket</h2>
+
+            <textarea
+              className="border w-full rounded px-2 py-1 text-sm mt-3"
+              rows={4}
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+            />
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setReplyModal(false)}
+                className="bg-gray-400 text-white px-2 py-1 rounded text-xs"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={submitReply}
+                className="bg-green-600 text-white px-2 py-1 rounded text-xs"
+              >
+                Send Reply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

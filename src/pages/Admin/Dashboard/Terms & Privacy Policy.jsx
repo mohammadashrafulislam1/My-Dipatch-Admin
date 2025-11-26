@@ -1,88 +1,134 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
+import { Toaster, toast } from "react-hot-toast";
+import { endPoint } from "../../../Components/ForAPIs";
+import useAuth from "../../../Components/useAuth";
 
-const TermsPrivacyPolicy = () => {
+export default function TermsPrivacyPolicy() {
+  const { token } = useAuth();
+
   const [terms, setTerms] = useState("");
   const [privacyPolicy, setPrivacyPolicy] = useState("");
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
 
-  // Simulate fetching from backend on mount
-  useEffect(() => {
-    // Replace this with API fetch calls
-    const fetchData = async () => {
+  // 🔐 Always attach token
+  const axiosConfig = {
+    headers: { Authorization: `Bearer ${token}` },
+    withCredentials: true,
+  };
+
+  // ============================
+  // GET BOTH POLICIES
+  // ============================
+  const fetchPolicies = async () => {
+    try {
       setLoading(true);
-      // Dummy fetched data:
-      const fetchedTerms = "These are the current Terms & Conditions...";
-      const fetchedPrivacy = "This is the current Privacy Policy...";
-      setTerms(fetchedTerms);
-      setPrivacyPolicy(fetchedPrivacy);
-      setLoading(false);
-    };
 
-    fetchData();
+      const res = await axios.get(`${endPoint}/policy`, axiosConfig);
+
+      setTerms(res.data?.terms?.content || "");
+      setPrivacyPolicy(res.data?.privacy?.content || "");
+
+    } catch (err) {
+      toast.error("Failed to load policies");
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPolicies();
   }, []);
 
-  const handleSave = () => {
-    // Validate non-empty or any other rules
-    if (!terms.trim() || !privacyPolicy.trim()) {
-      setMessage("Both fields are required.");
-      return;
+  // ============================
+  // UPDATE A POLICY
+  // ============================
+  const updatePolicy = async (type, content) => {
+    try {
+      const payload = {
+        title: type === "terms" ? "Terms & Conditions" : "Privacy Policy",
+        content,
+      };
+
+      await axios.put(`${endPoint}/policy/${type}`, payload, axiosConfig);
+
+      toast.success(
+        type === "terms"
+          ? "Terms & Conditions updated!"
+          : "Privacy Policy updated!"
+      );
+
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to update policy");
     }
-    setMessage("");
-    // Call API to save data here
-    alert("Terms & Privacy Policy updated successfully!");
   };
 
+  // ============================
+  // SAVE BOTH POLICIES
+  // ============================
+  const handleSave = async () => {
+    if (!terms.trim() || !privacyPolicy.trim()) {
+      return toast.error("Both fields are required");
+    }
+
+    await updatePolicy("terms", terms);
+    await updatePolicy("privacy", privacyPolicy);
+  };
+
+  // ============================
+  // CLEAR FIELDS
+  // ============================
   const handleClear = () => {
-    if (
-      window.confirm(
-        "Are you sure you want to clear both Terms & Conditions and Privacy Policy?"
-      )
-    ) {
+    if (window.confirm("Clear all content?")) {
       setTerms("");
       setPrivacyPolicy("");
-      setMessage("Content cleared. Don't forget to save.");
+      toast("Content cleared. Click Save to apply.");
     }
   };
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) {
+    return (
+      <div className="w-full text-center py-10 text-lg font-semibold">
+        Loading Policies...
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow">
-      <h1 className="md:text-3xl text-xl font-bold mb-6">Terms & Privacy Policy</h1>
+      <Toaster position="top-center" />
 
-      {message && (
-        <p className="mb-4 text-red-600 font-semibold">{message}</p>
-      )}
+      <h1 className="text-2xl md:text-3xl font-bold mb-6">
+        Terms & Privacy Policy
+      </h1>
 
+      {/* Terms */}
       <div className="mb-6">
-        <label className="block font-semibold mb-2" htmlFor="terms">
-          Terms & Conditions
-        </label>
+        <label className="block font-semibold mb-2">Terms & Conditions</label>
         <textarea
-          id="terms"
-          rows={8}
+          rows={10}
           value={terms}
           onChange={(e) => setTerms(e.target.value)}
           className="w-full border border-gray-300 rounded p-3 focus:outline-blue-500"
-          placeholder="Enter Terms & Conditions here..."
+          placeholder="Enter Terms & Conditions..."
         />
       </div>
 
+      {/* Privacy */}
       <div className="mb-6">
-        <label className="block font-semibold mb-2" htmlFor="privacy">
-          Privacy Policy
-        </label>
+        <label className="block font-semibold mb-2">Privacy Policy</label>
         <textarea
-          id="privacy"
-          rows={8}
+          rows={10}
           value={privacyPolicy}
           onChange={(e) => setPrivacyPolicy(e.target.value)}
           className="w-full border border-gray-300 rounded p-3 focus:outline-blue-500"
-          placeholder="Enter Privacy Policy here..."
+          placeholder="Enter Privacy Policy..."
         />
       </div>
 
+      {/* BUTTONS */}
       <div className="flex space-x-4">
         <button
           onClick={handleSave}
@@ -90,6 +136,7 @@ const TermsPrivacyPolicy = () => {
         >
           Save
         </button>
+
         <button
           onClick={handleClear}
           className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700"
@@ -99,6 +146,4 @@ const TermsPrivacyPolicy = () => {
       </div>
     </div>
   );
-};
-
-export default TermsPrivacyPolicy;
+}

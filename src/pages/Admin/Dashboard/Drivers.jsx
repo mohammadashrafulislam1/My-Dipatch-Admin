@@ -1,48 +1,71 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
+import { toast, Toaster } from "react-hot-toast";
+import { endPoint } from "../../../Components/ForAPIs";
+
+const API = `${endPoint}/user`;
 
 const Drivers = () => {
   const [drivers, setDrivers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch all users (admin only)
+  const fetchDrivers = async () => {
+    try {
+      const res = await axios.get(API, {
+        withCredentials: true,
+      });
+
+      // Only drivers
+      const onlyDrivers = res.data.filter((u) => u.role === "driver");
+      setDrivers(onlyDrivers);
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to load drivers");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Replace with real API call
-    const dummyDrivers = [
-      {
-        id: 1,
-        name: "Alice Johnson",
-        phone: "+1 234 567 890",
-        email: "alice@example.com",
-        status: "Active",
-        joinedAt: "2023-12-01",
-      },
-      {
-        id: 2,
-        name: "Bob Smith",
-        phone: "+1 987 654 321",
-        email: "bob@example.com",
-        status: "Inactive",
-        joinedAt: "2024-01-15",
-      },
-    ];
-    setDrivers(dummyDrivers);
+    fetchDrivers();
   }, []);
 
-  // Example: toggle driver status
-  const toggleStatus = (id) => {
-    setDrivers((prev) =>
-      prev.map((driver) =>
-        driver.id === id
-          ? {
-              ...driver,
-              status: driver.status === "Active" ? "Inactive" : "Active",
-            }
-          : driver
-      )
-    );
+  // Toggle isActive (true <-> false)
+  const toggleStatus = async (id, currentState) => {
+    const newState = !currentState;
+
+    try {
+      await axios.put(
+        `${API}/${id}/status`,
+        { isActive: newState },
+        { withCredentials: true }
+      );
+
+      toast.success(`Driver ${newState ? "Activated" : "Deactivated"}`);
+
+      // update UI instantly
+      setDrivers((prev) =>
+        prev.map((d) =>
+          d._id === id ? { ...d, isActive: newState } : d
+        )
+      );
+    } catch (error) {
+      console.log(error);
+      toast.error("Status update failed");
+    }
   };
+
+  if (loading) {
+    return <p className="p-6 text-lg">Loading drivers...</p>;
+  }
 
   return (
     <div className="md:p-6">
+      <Toaster position="top-center" />
+
       <h1 className="text-2xl font-bold mb-4">Drivers List</h1>
+
       {drivers.length === 0 ? (
         <p>No drivers found.</p>
       ) : (
@@ -58,30 +81,44 @@ const Drivers = () => {
                 <th className="border px-4 py-2">Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {drivers.map((driver) => (
-                <tr key={driver.id}>
-                  <td className="border px-4 py-2">{driver.name}</td>
+                <tr key={driver._id}>
+                  <td className="border px-4 py-2">
+                    {driver.firstName} {driver.lastName}
+                  </td>
                   <td className="border px-4 py-2">{driver.phone}</td>
                   <td className="border px-4 py-2">{driver.email}</td>
-                  <td className="border px-4 py-2">{driver.status}</td>
-                  <td className="border px-4 py-2">{driver.joinedAt}</td>
+
+                  <td className="border px-4 py-2 capitalize">
+                    {driver.isActive ? (
+                      <span className="text-green-600 font-semibold">Active</span>
+                    ) : (
+                      <span className="text-red-600 font-semibold">Inactive</span>
+                    )}
+                  </td>
+
+                  <td className="border px-4 py-2">
+                    {new Date(driver.createdAt).toLocaleDateString()}
+                  </td>
+
                   <td className="border px-4 py-2 space-x-2">
                     <button
-                      onClick={() => toggleStatus(driver.id)}
+                      onClick={() => toggleStatus(driver._id, driver.isActive)}
                       className={`px-3 py-1 rounded text-white ${
-                        driver.status === "Active"
+                        driver.isActive
                           ? "bg-red-500 hover:bg-red-600"
                           : "bg-green-500 hover:bg-green-600"
                       }`}
                     >
-                      {driver.status === "Active" ? "Deactivate" : "Activate"}
+                      {driver.isActive ? "Deactivate" : "Activate"}
                     </button>
-                    {/* You can add more buttons like View, Remove etc */}
                   </td>
                 </tr>
               ))}
             </tbody>
+
           </table>
         </div>
       )}

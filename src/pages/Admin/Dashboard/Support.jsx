@@ -9,6 +9,7 @@ import {
   FiClock,
   FiMessageSquare,
 } from "react-icons/fi";
+import toast, { Toaster } from "react-hot-toast";
 
 const Support = () => {
   const [tickets, setTickets] = useState([]);
@@ -35,6 +36,9 @@ const Support = () => {
   const [replyText, setReplyText] = useState("");
   const [selectedTicket, setSelectedTicket] = useState(null);
 
+  // Loading for reply
+  const [replyLoading, setReplyLoading] = useState(false);
+
   // Filter FAQ
   const [faqFilter, setFaqFilter] = useState("all");
 
@@ -57,6 +61,7 @@ const Support = () => {
       setTickets(res.data?.tickets || []);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load tickets");
     } finally {
       setLoadingTickets(false);
     }
@@ -71,6 +76,7 @@ const Support = () => {
       setFaqs(list);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load FAQs");
     } finally {
       setLoadingFaqs(false);
     }
@@ -92,6 +98,7 @@ const Support = () => {
       setUsersMap(map);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load users");
     }
   };
 
@@ -118,58 +125,83 @@ const Support = () => {
 
   // Submit Reply
   const submitReply = async () => {
-    if (!replyText.trim()) return;
+    if (!replyText.trim()) return toast.error("Reply cannot be empty!");
 
-    await axios.put(
-      `${endPoint}/admin/support/tickets/admin`,
-      {
-        ticketId: selectedTicket._id,
-        reply: replyText,
-        status: "Resolved",
-      },
-      { withCredentials: true }
-    );
+    try {
+      setReplyLoading(true);
 
-    setReplyModal(false);
-    setReplyText("");
-    loadTickets();
+      await axios.put(
+        `${endPoint}/support/tickets/admin`,
+        {
+          ticketId: selectedTicket._id,
+          reply: replyText,
+          status: "Resolved",
+        },
+        { withCredentials: true }
+      );
+
+      toast.success("Reply sent!");
+      setReplyModal(false);
+      setReplyText("");
+      loadTickets();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to send reply");
+    } finally {
+      setReplyLoading(false);
+    }
   };
 
   // Add FAQ
   const addFaq = async () => {
     if (!newQuestion.trim() || !newAnswer.trim()) {
-      alert("Fill all fields!");
-      return;
+      return toast.error("Fill all fields!");
     }
 
-    await axios.post(
-      `${endPoint}/faqs`,
-      { category: newCategory, question: newQuestion, answer: newAnswer },
-      { withCredentials: true }
-    );
+    try {
+      await axios.post(
+        `${endPoint}/faqs`,
+        { category: newCategory, question: newQuestion, answer: newAnswer },
+        { withCredentials: true }
+      );
 
-    setNewQuestion("");
-    setNewAnswer("");
-    loadFaqs();
+      toast.success("FAQ Added!");
+      setNewQuestion("");
+      setNewAnswer("");
+      loadFaqs();
+    } catch (err) {
+      toast.error("Failed to add FAQ");
+    }
   };
 
   // Edit FAQ
   const saveEditFaq = async () => {
-    await axios.put(
-      `${endPoint}/faqs/${editId}`,
-      { question: editQuestion, answer: editAnswer, category: editCategory },
-      { withCredentials: true }
-    );
+    try {
+      await axios.put(
+        `${endPoint}/faqs/${editId}`,
+        { question: editQuestion, answer: editAnswer, category: editCategory },
+        { withCredentials: true }
+      );
 
-    setEditId(null);
-    loadFaqs();
+      toast.success("FAQ Updated!");
+      setEditId(null);
+      loadFaqs();
+    } catch (err) {
+      toast.error("Failed to update FAQ");
+    }
   };
 
   // Delete FAQ
   const deleteFaq = async (id) => {
     if (!window.confirm("Delete this FAQ?")) return;
-    await axios.delete(`${endPoint}/faqs/${id}`, { withCredentials: true });
-    loadFaqs();
+
+    try {
+      await axios.delete(`${endPoint}/faqs/${id}`, { withCredentials: true });
+      toast.success("FAQ Deleted!");
+      loadFaqs();
+    } catch (err) {
+      toast.error("Failed to delete FAQ");
+    }
   };
 
   const filteredFaqs = faqs.filter((faq) => {
@@ -182,92 +214,98 @@ const Support = () => {
   // ------------------------------
   return (
     <div className="md:p-6 max-w-6xl mx-auto space-y-10">
-
+<Toaster position="top-center" reverseOrder={false} />
       {/* HEADER */}
       <h1 className="text-3xl font-bold">Support Center</h1>
 
-      {/* ==================== SUPPORT TICKETS (TOP) ==================== */}
-      <div className="bg-white rounded-2xl shadow p-6">
+      {/* ==================== SUPPORT TICKETS hidden==================== */}
+      <div className="bg-white rounded-2xl shadow p-6 hidden">
         <h2 className="text-xl font-semibold mb-4">Support Tickets</h2>
 
         <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2">
-          {tickets.map((ticket) => {
-            const info = getUserInfo(ticket);
+          {loadingTickets ? (
+            <p className="text-gray-500">Loading tickets...</p>
+          ) : tickets.length === 0 ? (
+            <p className="text-gray-400 text-sm">No tickets found.</p>
+          ) : (
+            tickets.map((ticket) => {
+              const info = getUserInfo(ticket);
 
-            return (
-              <div
-                key={ticket._id}
-                className="border rounded-xl p-4 bg-gray-50 hover:bg-white transition shadow-sm"
-              >
-                {/* User info */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-10 w-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-lg font-semibold">
-                    {info.fullName[0]?.toUpperCase()}
+              return (
+                <div
+                  key={ticket._id}
+                  className="border rounded-xl p-4 bg-gray-50 hover:bg-white transition shadow-sm"
+                >
+                  {/* User info */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-10 w-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-lg font-semibold">
+                      {info.fullName[0]?.toUpperCase()}
+                    </div>
+
+                    <div>
+                      <p className="font-semibold flex items-center gap-1 text-sm">
+                        <FiUser /> {info.fullName}
+                      </p>
+                      <p className="text-xs text-gray-500 flex items-center gap-1">
+                        <FiMail /> {info.email}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`ml-auto px-3 py-1 rounded-full text-xs ${
+                        ticket.userType === "driver"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-green-100 text-green-700"
+                      }`}
+                    >
+                      {ticket.userType.toUpperCase()}
+                    </span>
                   </div>
 
-                  <div>
-                    <p className="font-semibold flex items-center gap-1 text-sm">
-                      <FiUser /> {info.fullName}
-                    </p>
-                    <p className="text-xs text-gray-500 flex items-center gap-1">
-                      <FiMail /> {info.email}
-                    </p>
+                  {/* Issue */}
+                  <p className="text-sm text-gray-700 flex gap-2 mb-2">
+                    <FiMessageSquare className="text-gray-500 mt-[2px]" />
+                    {ticket.issue}
+                  </p>
+
+                  {/* Footer */}
+                  <div className="flex justify-between text-xs mt-2">
+                    <span className="flex items-center gap-1 text-gray-500">
+                      <FiClock />{" "}
+                      {new Date(ticket.createdAt).toLocaleString()}
+                    </span>
+
+                    <span
+                      className={`px-3 py-1 rounded-full ${
+                        ticket.status === "open"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-green-100 text-green-700"
+                      }`}
+                    >
+                      {ticket.status.toUpperCase()}
+                    </span>
+
+                    <button
+                      onClick={() => openReplyModal(ticket)}
+                      className="bg-blue-600 text-white px-2 py-1 rounded-md text-xs"
+                    >
+                      Reply
+                    </button>
                   </div>
 
-                  <span
-                    className={`ml-auto px-3 py-1 rounded-full text-xs ${
-                      ticket.userType === "driver"
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-green-100 text-green-700"
-                    }`}
-                  >
-                    {ticket.userType.toUpperCase()}
-                  </span>
+                  {ticket.reply && (
+                    <div className="mt-2 text-xs border-t pt-2 text-gray-600">
+                      <strong>Admin Reply:</strong> {ticket.reply}
+                    </div>
+                  )}
                 </div>
-
-                {/* Issue */}
-                <p className="text-sm text-gray-700 flex gap-2 mb-2">
-                  <FiMessageSquare className="text-gray-500 mt-[2px]" />
-                  {ticket.issue}
-                </p>
-
-                {/* Footer */}
-                <div className="flex justify-between text-xs mt-2">
-                  <span className="flex items-center gap-1 text-gray-500">
-                    <FiClock />{" "}
-                    {new Date(ticket.createdAt).toLocaleString()}
-                  </span>
-
-                  <span
-                    className={`px-3 py-1 rounded-full ${
-                      ticket.status === "open"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-green-100 text-green-700"
-                    }`}
-                  >
-                    {ticket.status.toUpperCase()}
-                  </span>
-
-                  <button
-                    onClick={() => openReplyModal(ticket)}
-                    className="bg-blue-600 text-white px-2 py-1 rounded-md text-xs"
-                  >
-                    Reply
-                  </button>
-                </div>
-
-                {ticket.reply && (
-                  <div className="mt-2 text-xs border-t pt-2 text-gray-600">
-                    <strong>Admin Reply:</strong> {ticket.reply}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
 
-      {/* ==================== ADD FAQ (MIDDLE) ==================== */}
+      {/* ==================== ADD FAQ ==================== */}
       <div className="bg-white rounded-2xl shadow p-6 border border-blue-50">
         <h2 className="text-xl font-semibold mb-4">Add FAQ</h2>
 
@@ -280,14 +318,14 @@ const Support = () => {
             <option value="customer">Customer</option>
             <option value="driver">Driver</option>
           </select>
-  </div>
-          <input
-            className="border h-[40px] w-full rounded px-2 py-1 text-md"
-            placeholder="Question"
-            value={newQuestion}
-            onChange={(e) => setNewQuestion(e.target.value)}
-          />
-      
+        </div>
+
+        <input
+          className="border h-[40px] w-full rounded px-2 py-1 text-md"
+          placeholder="Question"
+          value={newQuestion}
+          onChange={(e) => setNewQuestion(e.target.value)}
+        />
 
         <textarea
           className="border rounded w-full px-2 py-1 text-md mt-3"
@@ -297,18 +335,17 @@ const Support = () => {
           onChange={(e) => setNewAnswer(e.target.value)}
         />
 
-       <button
-  onClick={addFaq}
-  className="mt-4 w-1/2 mx-auto block bg-blue-600 hover:bg-blue-700 
-             text-white px-3 py-1.5 rounded-md text-xs font-medium shadow-sm
-             transition-all duration-150"
->
-  Add FAQ
-</button>
-
+        <button
+          onClick={addFaq}
+          className="mt-4 w-1/2 mx-auto block bg-blue-600 hover:bg-blue-700 
+                     text-white px-3 py-1.5 rounded-md text-xs font-medium shadow-sm
+                     transition-all duration-150"
+        >
+          Add FAQ
+        </button>
       </div>
 
-      {/* ==================== MANAGE FAQS (BOTTOM) ==================== */}
+      {/* ==================== MANAGE FAQ ==================== */}
       <div className="bg-white rounded-2xl shadow p-6">
         <div className="flex justify-between">
           <h2 className="text-xl font-semibold">Manage FAQs</h2>
@@ -404,7 +441,7 @@ const Support = () => {
       {/* ==================== REPLY MODAL ==================== */}
       {replyModal && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-xl shadow w-[350px]">
+          <div className="bg-white p-6 rounded-xl shadow w-[450px]">
             <h2 className="font-semibold">Reply to Ticket</h2>
 
             <textarea
@@ -424,9 +461,21 @@ const Support = () => {
 
               <button
                 onClick={submitReply}
-                className="bg-green-600 text-white px-2 py-1 rounded text-xs"
+                disabled={replyLoading}
+                className={`${
+                  replyLoading
+                    ? "bg-green-400 cursor-not-allowed"
+                    : "bg-green-600"
+                } text-white px-2 py-1 rounded text-xs flex items-center gap-2`}
               >
-                Send Reply
+                {replyLoading ? (
+                  <>
+                    <span className="loader border-white border-t-transparent w-3 h-3 rounded-full animate-spin"></span>
+                    Sending...
+                  </>
+                ) : (
+                  "Send Reply"
+                )}
               </button>
             </div>
           </div>

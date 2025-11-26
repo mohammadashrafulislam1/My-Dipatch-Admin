@@ -37,7 +37,7 @@ const Drivers = () => {
 
     try {
       await axios.put(
-        `${API}/${id}/status`,
+        `${API}/${id}/active`,
         { isActive: newState },
         { withCredentials: true }
       );

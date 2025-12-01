@@ -1,20 +1,29 @@
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import axios from "axios";
+import io from "socket.io-client";
 import { IoSend, IoArrowBackOutline } from "react-icons/io5";
-import { BsCircleFill, BsPaperclip } from "react-icons/bs";
+import { BsPaperclip } from "react-icons/bs";
 import { MdImage } from "react-icons/md";
+import useAuth from "../../../Components/useAuth";
+import { endPoint } from "../../../Components/ForAPIs";
 
-const users = [
-  { id: 1, name: "John Doe", online: true },
-  { id: 2, name: "Jane Smith", online: false },
-  { id: 3, name: "Mike Johnson", online: true },
-];
+const socket = io(endPoint, {
+  transports: ["websocket"],
+});
 
 const Chat = () => {
+  const { admin } = useAuth();
+  const adminId = admin?._id;
+
+  const [allUsers, setAllUsers] = useState([]);
+  const [rideData, setRideData] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [messages, setMessages] = useState([]);
+
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState({});
   const [selectedFile, setSelectedFile] = useState(null);
+  const [searchText, setSearchText] = useState("");
 
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -22,256 +31,274 @@ const Chat = () => {
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
 
-  const userIdFromQuery = searchParams.get("user");
-
-  useEffect(() => {
-    if (userIdFromQuery && !selectedUser) {
-      const foundUser = users.find((u) => u.id === Number(userIdFromQuery));
-      if (foundUser) {
-        setSelectedUser(foundUser);
-      }
-    }
-  }, [userIdFromQuery, selectedUser]);
-
-  const handleUserClick = (user) => {
-    setSelectedUser(user);
-    navigate(`/chat?user=${user.id}`);
+  // Fetch All Users
+  const fetchUsers = async () => {
+    const res = await axios.get(`${endPoint}/user`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
+    });
+    setAllUsers(res.data);
   };
 
-  const handleSend = () => {
+  // Fetch All Rides
+  const fetchRides = async () => {
+    const res = await axios.get(`${endPoint}/rides`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
+    });
+    setRideData(res.data.rides);
+  };
+
+  // Fetch Chat History
+  const fetchChatHistory = async (userId) => {
+    const res = await axios.get(`${endPoint}/chat/${userId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
+    });
+
+    setMessages(res.data.messages);
+  };
+
+  // Detect if user has an ACTIVE ride
+  const isActiveRide = (user) => {
+    const activeStatuses = ["pending", "accepted", "on_the_way", "in_progress", "at_stop"];
+
+    return rideData.some(
+      (r) =>
+        activeStatuses.includes(r.status) &&
+        (r.driverId === user._id || r.customerId === user._id)
+    );
+  };
+
+  useEffect(() => {
+    fetchUsers();
+    fetchRides();
+  }, []);
+
+  // SOCKET join
+  useEffect(() => {
+    if (adminId) {
+      socket.emit("join", { userId: adminId, role: "admin" });
+    }
+  }, [adminId]);
+
+  // SOCKET receive message
+  useEffect(() => {
+    socket.on("chat-message", (msg) => {
+      if (msg.senderId === selectedUser?._id || msg.recipientId === selectedUser?._id) {
+        setMessages((prev) => [...prev, msg]);
+      }
+    });
+
+    return () => socket.off("chat-message");
+  }, [selectedUser]);
+
+  // Auto-select user via URL param
+  useEffect(() => {
+    const userId = searchParams.get("user");
+    if (userId) {
+      const found = allUsers.find((u) => u._id === userId);
+      if (found) {
+        setSelectedUser(found);
+        fetchChatHistory(found._id);
+      }
+    }
+  }, [allUsers]);
+
+  // Send Message
+  const handleSend = async () => {
+    if (!selectedUser) return;
     if (!message.trim() && !selectedFile) return;
 
-    let newMessage;
-    if (selectedFile) {
-      const url = URL.createObjectURL(selectedFile);
-      const fileType = selectedFile.type.startsWith("image/") ? "image" : "file";
+    let fileUrl = null;
+    let fileType = null;
 
-      newMessage = {
-        from: "me",
-        file: url,
-        fileName: selectedFile.name,
-        fileType,
-      };
-    } else {
-      newMessage = { from: "me", text: message };
+    if (selectedFile) {
+      const form = new FormData();
+      form.append("file", selectedFile);
+
+      const upload = await axios.post(`${endPoint}/upload/chat-file`, form);
+      fileUrl = upload.data.url;
+      fileType = selectedFile.type.startsWith("image") ? "image" : "file";
     }
 
-    setMessages((prev) => ({
-      ...prev,
-      [selectedUser.id]: [...(prev[selectedUser.id] || []), newMessage],
-    }));
+    const localMsg = {
+      senderId: adminId,
+      recipientId: selectedUser._id,
+      senderRole: "admin",
+      message,
+      fileUrl,
+      fileType,
+    };
+
+    setMessages((prev) => [...prev, localMsg]);
+
+    socket.emit("chat-message", localMsg);
 
     setMessage("");
-    if (selectedFile) {
-      // Do NOT revoke here immediately, revoke on component unmount or when removing file
-      // URL.revokeObjectURL(selectedFile);
-      setSelectedFile(null);
-    }
-
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (imageInputRef.current) imageInputRef.current.value = "";
+    setSelectedFile(null);
   };
 
   const handleBack = () => {
     setSelectedUser(null);
-    navigate("/chat"); // clear query param
-    setSelectedFile(null);
-    setMessage("");
+    navigate("/chat");
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setMessage("");
-    }
-  };
+  // FILTER + SORT USERS
+  const filteredUsers = allUsers
+    .filter((u) => {
+      const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
+      return (
+        fullName.includes(searchText.toLowerCase()) ||
+        u.email?.toLowerCase().includes(searchText.toLowerCase()) ||
+        u.phone?.includes(searchText)
+      );
+    })
+    .sort((a, b) => {
+      const aActive = isActiveRide(a);
+      const bActive = isActiveRide(b);
 
-  const handleRemoveFile = () => {
-    if (selectedFile) {
-      setSelectedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      if (imageInputRef.current) imageInputRef.current.value = "";
-    }
-  };
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
 
-  // Cleanup created object URLs on unmount or when selectedFile changes
-  useEffect(() => {
-    let objectUrl;
-    if (selectedFile) {
-      objectUrl = URL.createObjectURL(selectedFile);
-      return () => {
-        URL.revokeObjectURL(objectUrl);
-      };
-    }
-  }, [selectedFile]);
+      return 0;
+    });
 
   return (
-    <div className="flex h-[600px] max-w-4xl mx-auto bg-white shadow-md rounded-xl overflow-hidden relative">
-      {/* Sidebar */}
-      <div
-        className={`w-full sm:w-1/3 border-r bg-gray-100 absolute sm:relative z-10 transition-transform duration-300 ${
-          selectedUser ? "translate-x-full sm:translate-x-0" : "translate-x-0"
-        } sm:translate-x-0`}
-      >
-        <div className="p-4 text-xl font-bold border-b">Chats</div>
-        <ul>
-          {users.map((user) => (
-            <li
-              key={user.id}
-              onClick={() => handleUserClick(user)}
-              className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-200 ${
-                selectedUser?.id === user.id ? "bg-gray-200" : ""
+    <div className="flex h-[600px] max-w-4xl mx-auto bg-white shadow-md rounded-xl overflow-hidden">
+
+      {/* LEFT SIDEBAR */}
+      <div className="w-full sm:w-1/3 border-r bg-gray-100">
+        <div className="p-4 text-xl font-bold border-b">All Users</div>
+
+        {/* SEARCH BAR */}
+        <div className="px-4 py-2">
+          <input
+            type="text"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            placeholder="Search user..."
+            className="w-full px-3 py-2 rounded-lg border"
+          />
+        </div>
+
+        {/* USER LIST */}
+        {filteredUsers.map((u) => {
+          const active = isActiveRide(u);
+
+          return (
+            <div
+              key={u._id}
+              onClick={() => {
+                setSelectedUser(u);
+                fetchChatHistory(u._id);
+                navigate(`/chat?user=${u._id}`);
+              }}
+              className={`cursor-pointer px-4 py-3 flex items-center gap-3 ${
+                selectedUser?._id === u._id ? "bg-gray-200" : ""
               }`}
             >
               <div className="relative">
-                <div className="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center text-lg font-semibold">
-                  {user.name.charAt(0)}
+                <div className="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center text-lg">
+                  {(u.firstName || "U").charAt(0).toUpperCase()}
                 </div>
-                <BsCircleFill
-                  className={`absolute -bottom-1 -right-1 text-xs ${
-                    user.online ? "text-green-500" : "text-gray-400"
-                  }`}
-                />
+
+                {active && (
+                  <span className="absolute -right-1 -top-1 w-3 h-3 bg-green-500 rounded-full"></span>
+                )}
               </div>
+
               <div>
-                <div className="font-medium">{user.name}</div>
+                <div className="font-medium">
+                  {u.firstName} {u.lastName}
+                </div>
                 <div className="text-sm text-gray-500">
-                  {user.online ? "Online" : "Offline"}
+                  {u.role === "driver" ? "Driver" : "Customer"}
                 </div>
               </div>
-            </li>
-          ))}
-        </ul>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Chat Box */}
-      <div
-        className={`w-full sm:flex-1 flex flex-col transition-transform duration-300 ${
-          selectedUser ? "translate-x-0" : "translate-x-full sm:translate-x-0"
-        }`}
-      >
-        {selectedUser ? (
+      {/* RIGHT CHAT WINDOW */}
+      <div className="flex-1 flex flex-col">
+        {!selectedUser ? (
+          <div className="flex items-center justify-center text-gray-500">
+            Select a user to start chatting
+          </div>
+        ) : (
           <>
             <div className="p-4 border-b font-semibold flex items-center gap-2">
-              {/* Back Button for Mobile */}
-              <button
-                onClick={handleBack}
-                className="sm:hidden text-xl text-gray-600"
-              >
+              <button onClick={handleBack} className="sm:hidden text-xl text-gray-600">
                 <IoArrowBackOutline />
               </button>
-              Chat with {selectedUser.name}
+              Chat with {selectedUser.firstName} {selectedUser.lastName}
             </div>
 
-            {/* Messages */}
             <div className="flex-1 p-4 overflow-y-auto space-y-2">
-              {(messages[selectedUser.id] || []).map((msg, i) => (
+              {messages.map((msg, idx) => (
                 <div
-                key={i}
-                className={`max-w-[300px] max-h-[300px] px-2 py-2 rounded-xl text-sm break-words ${
-                  msg.from === "me"
-                    ? "ml-auto bg-blue-500 text-white"
-                    : "bg-gray-200 text-gray-800"
-                }`}
-              >
-                {msg.text && <span>{msg.text}</span>}
-              
-                {msg.fileType === "image" && (
-                  <img
-                    src={msg.file}
-                    alt={msg.fileName}
-                    className="w-[300px] h-[250px]  rounded-md mt-1 object-cover top-0"
-                  />
-                )}
-              
-                {msg.fileType === "file" && (
-                  <a
-                    href={msg.file}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline"
-                  >
-                    {msg.fileName}
-                  </a>
-                )}
-              </div>
-              
+                  key={idx}
+                  className={`max-w-[300px] px-3 py-2 rounded-lg ${
+                    msg.senderId === adminId
+                      ? "ml-auto bg-blue-500 text-white"
+                      : "bg-gray-200 text-gray-800"
+                  }`}
+                >
+                  {msg.message && <p>{msg.message}</p>}
+
+                  {msg.fileUrl && msg.fileType === "image" && (
+                    <img src={msg.fileUrl} alt="img" className="w-40 rounded mt-1" />
+                  )}
+
+                  {msg.fileUrl && msg.fileType === "file" && (
+                    <a
+                      href={msg.fileUrl}
+                      target="_blank"
+                      className="underline"
+                      rel="noreferrer"
+                    >
+                      Download File
+                    </a>
+                  )}
+                </div>
               ))}
             </div>
 
-            {/* Input Area */}
-            <div className="p-3 border-t flex flex-col gap-2">
-              {/* Preview of selected file */}
-              {selectedFile && (
-                <div className="flex items-center justify-between p-2 bg-gray-100 rounded">
-                  {selectedFile.type.startsWith("image/") ? (
-                    <img
-                      src={URL.createObjectURL(selectedFile)}
-                      alt={selectedFile.name}
-                      className="h-16 rounded"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <BsPaperclip className="text-2xl text-gray-600" />
-                      <span className="truncate max-w-xs">{selectedFile.name}</span>
-                    </div>
-                  )}
-                  <button
-                    onClick={handleRemoveFile}
-                    className="text-red-600 font-bold px-2"
-                    title="Remove file"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 text-xl text-gray-600">
-                  <label className="cursor-pointer">
-                    <BsPaperclip />
-                    <input
-                      type="file"
-                      hidden
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                    />
-                  </label>
-                  <label className="cursor-pointer">
-                    <MdImage />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      hidden
-                      ref={imageInputRef}
-                      onChange={handleFileChange}
-                    />
-                  </label>
-                </div>
-
+            {/* INPUT */}
+            <div className="border-t p-3 flex items-center gap-2">
+              <label>
+                <BsPaperclip className="text-xl cursor-pointer" />
                 <input
-                  type="text"
-                  className="flex-1 border rounded-full px-4 py-2 outline-none"
-                  placeholder="Type your message..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                  disabled={!!selectedFile} // disable text input if a file is selected
+                  type="file"
+                  hidden
+                  ref={fileInputRef}
+                  onChange={(e) => setSelectedFile(e.target.files[0])}
                 />
-                <button
-                  onClick={handleSend}
-                  className="p-2 bg-blue-500 text-white rounded-full"
-                >
-                  <IoSend />
-                </button>
-              </div>
+              </label>
+
+              <label>
+                <MdImage className="text-xl cursor-pointer" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  ref={imageInputRef}
+                  onChange={(e) => setSelectedFile(e.target.files[0])}
+                />
+              </label>
+
+              <input
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="flex-1 border rounded-full px-4 py-2"
+                placeholder="Type message..."
+              />
+
+              <button onClick={handleSend} className="p-2 bg-blue-500 text-white rounded-full">
+                <IoSend />
+              </button>
             </div>
           </>
-        ) : (
-          <div className="hidden sm:flex flex-1 items-center justify-center text-gray-500">
-            Select a user to start chatting
-          </div>
         )}
       </div>
     </div>

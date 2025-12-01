@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
+import useAuth from "../../../Components/useAuth"; 
 import {
   LineChart,
   Line,
@@ -10,102 +12,100 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
+import { endPoint } from "../../../Components/ForAPIs";
 
 const Analytics = () => {
-  // Dummy data for charts
+  const { token } = useAuth(); 
+
   const [rideData, setRideData] = useState([]);
-  const [driverStatusData, setDriverStatusData] = useState([]);
   const [revenueData, setRevenueData] = useState([]);
 
   useEffect(() => {
-    // Simulate API data fetch here
-    setRideData([
-      { date: "2025-06-28", rides: 120 },
-      { date: "2025-06-29", rides: 98 },
-      { date: "2025-06-30", rides: 150 },
-      { date: "2025-07-01", rides: 170 },
-      { date: "2025-07-02", rides: 200 },
-      { date: "2025-07-03", rides: 180 },
-      { date: "2025-07-04", rides: 220 },
-    ]);
+    if (token) fetchAnalytics();
+  }, [token]);
 
-    setDriverStatusData([
-      { status: "Active", count: 80 },
-      { status: "Inactive", count: 20 },
-      { status: "Suspended", count: 5 },
-    ]);
+  const fetchAnalytics = async () => {
+    try {
+      // 🚗 GET RIDES with token
+      const rideRes = await axios.get(`${endPoint}/rides`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const rides = rideRes.data?.rides || [];
 
-    setRevenueData([
-      { month: "Jan", revenue: 12000 },
-      { month: "Feb", revenue: 15000 },
-      { month: "Mar", revenue: 18000 },
-      { month: "Apr", revenue: 13000 },
-      { month: "May", revenue: 17000 },
-      { month: "Jun", revenue: 21000 },
-    ]);
-  }, []);
+      // 1️⃣ Rides Over Last 7 Days
+      const last7 = [];
+      for (let i = 6; i >= 0; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
 
-  const COLORS = ["#0088FE", "#00C49F", "#FF8042"];
+        const dateKey = d.toISOString().split("T")[0];
+        const ridesToday = rides.filter(
+          (r) => r.createdAt?.split("T")[0] === dateKey
+        ).length;
+
+        last7.push({ date: dateKey, rides: ridesToday });
+      }
+      setRideData(last7);
+
+      // 2️⃣ Monthly Revenue
+      const months = {
+        Jan: 0, Feb: 0, Mar: 0, Apr: 0, May: 0, Jun: 0,
+        Jul: 0, Aug: 0, Sep: 0, Oct: 0, Nov: 0, Dec: 0,
+      };
+
+      rides.forEach((ride) => {
+        if (ride.status === "completed") {
+          const date = new Date(ride.createdAt);
+          const month = date.toLocaleString("default", { month: "short" });
+          const adminCut = Number(ride.adminCut || 0);
+
+          months[month] += adminCut;
+        }
+      });
+
+      const revenueArr = Object.keys(months).map((m) => ({
+        month: m,
+        revenue: months[m],
+      }));
+
+      setRevenueData(revenueArr);
+
+    } catch (error) {
+      console.error("Analytics Fetch Error:", error);
+    }
+  };
 
   return (
     <div className="md:p-6 max-w-5xl mx-auto space-y-10">
       <h1 className="text-3xl font-bold mb-6">Analytics Dashboard</h1>
 
-      {/* Line Chart - Rides Over Last Week */}
+      {/* Rides Over Last Week */}
       <section>
         <h2 className="text-xl font-semibold mb-4">Rides Over Last Week</h2>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={rideData} margin={{ top: 20, right: 30, bottom: 5, left: 0 }}>
+          <LineChart data={rideData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="rides" stroke="#8884d8" activeDot={{ r: 8 }} />
+            <Line type="monotone" dataKey="rides" stroke="#006FFF" strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       </section>
 
-      {/* Pie Chart - Driver Status */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Driver Status Breakdown</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={driverStatusData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
-              outerRadius={100}
-              fill="#8884d8"
-              dataKey="count"
-            >
-              {driverStatusData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-      </section>
-
-      {/* Bar Chart - Monthly Revenue */}
+      {/* Monthly Revenue */}
       <section>
         <h2 className="text-xl font-semibold mb-4">Monthly Revenue</h2>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={revenueData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <BarChart data={revenueData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
+            <YAxis tickFormatter={(v) => `$${v}`} />
+            <Tooltip formatter={(v) => `$${v.toFixed(2)}`} />
             <Legend />
-            <Bar dataKey="revenue" fill="#82ca9d" />
+            <Bar dataKey="revenue" fill="#00C49F" />
           </BarChart>
         </ResponsiveContainer>
       </section>

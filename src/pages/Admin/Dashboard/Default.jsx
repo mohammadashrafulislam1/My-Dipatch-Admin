@@ -298,17 +298,29 @@ const pieCharts = [
 
 
   const downloadReport = () => {
-    const dataStr = JSON.stringify(chartData, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "chart-data.json";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const report = {
+    totals: dashboard,          // Total Orders, Total Delivered, Revenue, etc.
+    orders: chartOrders,        // Chart Order (Area chart)
+    customers: customerMap,     // Customer Map (Bar chart)
+    revenue: revenueData,       // Revenue Line Chart
+    dateRange: {
+      startDate: range[0].startDate,
+      endDate: range[0].endDate,
+    },
+    generatedAt: new Date().toISOString(),
   };
+
+  const dataStr = JSON.stringify(report, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "dashboard-report.json";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
   // UI Starts
   return (

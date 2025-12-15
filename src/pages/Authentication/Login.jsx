@@ -2,27 +2,39 @@ import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
 import { IoEyeOffSharp, IoEyeSharp } from "react-icons/io5";
+import { useNavigate } from "react-router-dom"; // For redirect
+import { toast } from "react-hot-toast"; // 🔹 toast
+import useAuth from "../../Components/useAuth";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate(); // 🔹 navigate
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login with:", formData);
+    setLoading(true);
+
+    try {
+      const data = await login(formData);
+      toast.success("Logged in successfully!"); // 🔹 success toast
+      navigate("/"); // 🔹 redirect to home
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Login failed"); // 🔹 error toast
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
-    console.log("Login with Google");
-  };
-
-  const handleFacebookLogin = () => {
-    console.log("Login with Facebook");
-  };
+  const handleGoogleLogin = () => toast("Google login coming soon!");
+  const handleFacebookLogin = () => toast("Facebook login coming soon!");
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F4F9FF] px-4">
@@ -37,7 +49,6 @@ const Login = () => {
           Login to Your Account
         </h2>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
@@ -69,20 +80,19 @@ const Login = () => {
 
           <button
             type="submit"
+            disabled={loading}
             className="w-full bg-[#008000] text-white py-2 rounded-full font-semibold hover:bg-green-700 transition text-sm sm:text-base"
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        {/* Divider */}
         <div className="flex items-center my-4">
           <div className="flex-1 h-px bg-gray-300" />
           <span className="px-3 text-sm text-gray-500">or</span>
           <div className="flex-1 h-px bg-gray-300" />
         </div>
 
-        {/* Social Login Buttons */}
         <div className="space-y-3">
           <button
             onClick={handleGoogleLogin}
@@ -101,7 +111,6 @@ const Login = () => {
           </button>
         </div>
 
-        {/* Extra Links */}
         <p className="text-center text-sm text-gray-600 mt-6">
           Don’t have an account?{" "}
           <a href="/signup" className="text-[#006FFF] font-medium hover:underline">

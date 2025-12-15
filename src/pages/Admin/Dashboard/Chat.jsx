@@ -36,7 +36,10 @@ const Chat = () => {
     const res = await axios.get(`${endPoint}/user`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
     });
-    setAllUsers(res.data);
+    // Remove admins from list
+  const filtered = res.data.filter((u) => u.role !== "admin");
+
+  setAllUsers(filtered);
   };
 
   // Fetch All Rides

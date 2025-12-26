@@ -23,7 +23,6 @@ import {
 import { MdEditDocument } from "react-icons/md";
 import { RiRoadMapLine } from "react-icons/ri";
 import { SlHome } from "react-icons/sl";
-import { TbBrandGoogleAnalytics } from "react-icons/tb";
 import { TfiAlignLeft } from "react-icons/tfi";
 import { VscSignOut } from "react-icons/vsc";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
@@ -59,7 +58,6 @@ const Dashboard = () => {
     "/orders": "Order Lists",
     "/drivers": "Drivers",
     "/customers": "Customers",
-    "/analytics": "Analytics",
     "/tasks": "Task Management",
     "/earnings": "Earnings",
     "/map": "Map",
@@ -81,7 +79,6 @@ const Dashboard = () => {
     { path: "orders", label: "Orders", icon: <TfiAlignLeft /> },
     { path: "pricing", label: "Control Pricing", icon: <RiRoadMapLine /> },
     { path: "customers", label: "Customers", icon: <FiUsers /> },
-    { path: "analytics", label: "Analytics", icon: <TbBrandGoogleAnalytics /> },
     { path: "earnings", label: "Earnings", icon: <BsCashCoin /> },
     { path: "TermsPrivacyPolicy", label: "Terms & Privacy Policy", icon: <MdEditDocument /> },
     { path: "chat", label: "Chat", icon: <BsChatLeftDots /> },

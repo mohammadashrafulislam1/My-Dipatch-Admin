@@ -4,6 +4,7 @@ import {
   BiWalletAlt,
 } from "react-icons/bi";
 import {
+  BsArrowLeftSquareFill,
   BsCashCoin,
   BsChatLeftDots,
   BsCircleFill,
@@ -46,7 +47,7 @@ const messages = [
 
 const Dashboard = () => {
   const location = useLocation();
-  const {admin} = useAuth()
+  const {admin, logout} = useAuth()
   console.log("user", admin)
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -125,14 +126,16 @@ const Dashboard = () => {
           ))}
         </div>
         <div className="divider mt-6 mb-2" />
-        <NavLink
-          to="/logout"
-          className="flex items-center gap-2 text-gray-700 px-3 py-2 hover:bg-gray-100 rounded-md"
-          onClick={() => setSidebarOpen(false)}
+        <div
+          className="flex items-center gap-2 text-gray-700 px-3 py-2 hover:bg-gray-100 rounded-md cursor-pointer"
+          onClick={() => logout()}
         >
           <VscSignOut className="text-[16px]" />
           Sign Out
-        </NavLink>
+        </div>
+        {/* <div onClick={() => setSidebarOpen(false)}>
+          <BsArrowLeftSquareFill className="text-xl" />
+        </div> */}
       </div>
 
       {/* Mobile Sidebar Overlay */}
@@ -180,14 +183,13 @@ const Dashboard = () => {
               ))}
             </div>
             <div className="divider mt-6 mb-2" />
-            <NavLink
-              to="/logout"
-              className="flex items-center gap-2 text-gray-700 px-3 py-2 hover:bg-gray-100 rounded-md"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <VscSignOut className="text-[16px]" />
-              Sign Out
-            </NavLink>
+             <div
+          className="flex items-center gap-2 text-gray-700 px-3 py-2 hover:bg-gray-100 rounded-md cursor-pointer"
+          onClick={() => logout()}
+        >
+          <VscSignOut className="text-[16px]" />
+          Sign Out
+        </div>
           </div>
         </div>
       )}
@@ -282,7 +284,7 @@ const Dashboard = () => {
       </li>
       <li
         className="flex items-center gap-2 p-3 hover:bg-gray-100 text-red-600 cursor-pointer"
-        onClick={() => window.location.href = "/logout"}
+        onClick={() => logout()}
       >
         <IoCloseOutline /> Sign Out
       </li>

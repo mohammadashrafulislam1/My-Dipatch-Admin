@@ -17,6 +17,7 @@ import Pricing from "../pages/Admin/Dashboard/Pricing";
 import Support from "../pages/Admin/Dashboard/Support";
 import Drivers from "../pages/Admin/Dashboard/Drivers";
 import TermsPrivacyPolicy from "../pages/Admin/Dashboard/Terms & Privacy Policy";
+import PrivateRoute from "./PrivateRouter";
 
 export const router = createBrowserRouter([
     {
@@ -26,63 +27,63 @@ export const router = createBrowserRouter([
         children:[
             {
                 path:'',
-                element:<Default/>
+                element:<PrivateRoute><Default/></PrivateRoute>
             },
             {
                 path:'orders',
-                element:<Order/>
+                element:<PrivateRoute><Order/></PrivateRoute>
             },
             {
                 path:'customers',
-                element:<Customers/>
+                element:<PrivateRoute><Customers/></PrivateRoute>
             },
             {
                 path:'analytics',
-                element:<Analytics/>
+                element:<PrivateRoute><Analytics/></PrivateRoute>
             },
             {
                 path:'tasks',
-                element:<Tasks/>
+                element:<PrivateRoute><Tasks/></PrivateRoute>
             },
             {
                 path:'earnings',
-                element:<Earnings/>
+                element:<PrivateRoute><Earnings/></PrivateRoute>
             },
             {
                 path:'pricing',
-                element:<Pricing/>
+                element:<PrivateRoute><Pricing/></PrivateRoute>
             },
             {
                 path:'chat',
-                element:<Chat/>
+                element:<PrivateRoute><Chat/></PrivateRoute>
             },
             {
                 path:'support',
-                element:<Support/>
+                element:<PrivateRoute><Support/></PrivateRoute>
             },
             {
                 path:'drivers',
-                element:<Drivers/>
+                element:<PrivateRoute><Drivers/></PrivateRoute>
             },
             {
                 path:'TermsPrivacyPolicy',
-                element:<TermsPrivacyPolicy/>
+                element:<PrivateRoute><TermsPrivacyPolicy/></PrivateRoute>
             },
             {
                 path:'wallet',
-                element:<Wallet/>
+                element:<PrivateRoute><Wallet/></PrivateRoute>
             },
             {
                 path:'profile',
-                element:<Profile/>
+                element:<PrivateRoute><Profile/></PrivateRoute>
             },
             {
                 path:'settings',
-                element:<Settings/>
+                element:<PrivateRoute><Settings/></PrivateRoute>
             },
             {
                 path:'notifications',
-                element:<Notification/>
+                element:<PrivateRoute><Notification/></PrivateRoute>
             },
         ]
     },
@@ -93,7 +94,7 @@ export const router = createBrowserRouter([
     },
     {
         path:'/signup',
-        element:<Signup/>,
+        element:<PrivateRoute><Signup/></PrivateRoute>,
         errorElement:<h1>err</h1>
     },
 ])

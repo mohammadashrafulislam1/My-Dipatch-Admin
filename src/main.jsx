@@ -18,11 +18,13 @@ import './index.css'
 import { RouterProvider } from 'react-router-dom'
 import { router } from './Router/router.jsx';
 import AdminAuthProvider from './Router/AuthProvider.jsx';
+import { Toaster } from 'react-hot-toast';
 
 
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-  <AdminAuthProvider><RouterProvider router={router}> </RouterProvider></AdminAuthProvider>  
+  <AdminAuthProvider><RouterProvider router={router}>
+      <Toaster position="top-right" /> </RouterProvider></AdminAuthProvider>  
   </StrictMode>,
 )

@@ -14,7 +14,8 @@ const Chat = () => {
   const { admin, token } = useAuth();
   const adminId = admin?._id;
 const [sending, setSending] = useState(false);
-
+const [unreadMap, setUnreadMap] = useState({});
+const [lastMessageMap, setLastMessageMap] = useState({});
   const [allUsers, setAllUsers] = useState([]);
   const [rideData, setRideData] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -59,6 +60,14 @@ const fetchChatHistory = async (userId) => {
       (m.senderId === userId && m.recipientId === adminId)
   );
   setMessages(filtered);
+  // ⏱️ set last message time
+  if (filtered.length > 0) {
+    const last = filtered[filtered.length - 1];
+    setLastMessageMap((prev) => ({
+      ...prev,
+      [userId]: new Date(last.createdAt).getTime(),
+    }));
+  }
 };
 
 
@@ -119,6 +128,14 @@ const fetchChatHistory = async (userId) => {
   if (!socket.current) return;
 
   const handleNewMessage = (msg) => {
+    const otherUserId =
+    msg.senderId === adminId ? msg.recipientId : msg.senderId;
+
+  // ⏱️ update last message time
+  setLastMessageMap((prev) => ({
+    ...prev,
+    [otherUserId]: new Date(msg.createdAt || Date.now()).getTime(),
+  }));
     setMessages((prev) => {
       // avoid duplicates
       if (prev.some((m) => m._id === msg._id)) return prev;
@@ -136,6 +153,13 @@ const fetchChatHistory = async (userId) => {
 
       return prev;
     });
+    // 🔔 MARK UNREAD if message is NOT from admin
+  if (msg.senderId !== adminId) {
+    setUnreadMap((prev) => ({
+      ...prev,
+      [msg.senderId]: (prev[msg.senderId] || 0) + 1,
+    }));
+  }
   };
 
   socket.current.on("support-message", handleNewMessage);
@@ -222,6 +246,10 @@ const handleSend = async () => {
       createdAt: new Date().toISOString(),
       optimistic: true,
     };
+setLastMessageMap((prev) => ({
+  ...prev,
+  [selectedUser._id]: Date.now(),
+}));
 
     setMessages((prev) => [...prev, optimisticMsg]);
 
@@ -304,21 +332,30 @@ const handleSend = async () => {
 
   // FILTER + SORT USERS
   const filteredUsers = allUsers
-    .filter((u) => {
-      const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
-      return (
-        fullName.includes(searchText.toLowerCase()) ||
-        u.email?.toLowerCase().includes(searchText.toLowerCase()) ||
-        u.phone?.includes(searchText)
-      );
-    })
-    .sort((a, b) => {
-      const aActive = isActiveRide(a);
-      const bActive = isActiveRide(b);
-      if (aActive && !bActive) return -1;
-      if (!aActive && bActive) return 1;
-      return 0;
-    });
+  .filter((u) => {
+    const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
+    return (
+      fullName.includes(searchText.toLowerCase()) ||
+      u.email?.toLowerCase().includes(searchText.toLowerCase()) ||
+      u.phone?.includes(searchText)
+    );
+  })
+  .sort((a, b) => {
+    const timeA = lastMessageMap[a._id] || 0;
+    const timeB = lastMessageMap[b._id] || 0;
+
+    // 🔥 newest message first
+    if (timeA !== timeB) return timeB - timeA;
+
+    // fallback: active ride
+    const aActive = isActiveRide(a);
+    const bActive = isActiveRide(b);
+    if (aActive && !bActive) return -1;
+    if (!aActive && bActive) return 1;
+
+    return 0;
+  });
+
 
   return (
     <div className="flex h-[600px] max-w-4xl mx-auto bg-white shadow-md rounded-xl overflow-hidden">
@@ -348,6 +385,11 @@ const handleSend = async () => {
                   setSelectedUser(u);
                   fetchChatHistory(u._id);
                   navigate(`/chat?user=${u._id}`);
+                  // ✅ Clear unread badge
+  setUnreadMap((prev) => ({
+    ...prev,
+    [u._id]: 0,
+  }));
                 }}
                 className={`cursor-pointer px-4 py-3 flex items-center gap-3 hover:bg-gray-200 transition-colors ${
                   selectedUser?._id === u._id ? "bg-blue-50 border-l-4 border-blue-500" : ""
@@ -364,6 +406,12 @@ const handleSend = async () => {
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">
                     {u.firstName} {u.lastName}
+                    {/* 🔵 UNREAD BADGE */}
+    {unreadMap[u._id] > 0 && (
+      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
+        {unreadMap[u._id]}
+      </span>
+    )}
                   </div>
                   <div className="text-sm text-gray-500 flex items-center gap-1">
                     <span className={`inline-block w-2 h-2 rounded-full ${active ? 'bg-green-500' : 'bg-gray-400'}`}></span>

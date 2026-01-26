@@ -21,13 +21,15 @@ import {
   IoMenuOutline,
   IoCloseOutline,
 } from "react-icons/io5";
-import { MdEditDocument } from "react-icons/md";
+import { MdEditDocument, MdOutlinePayments } from "react-icons/md";
 import { RiRoadMapLine } from "react-icons/ri";
 import { SlHome } from "react-icons/sl";
 import { TfiAlignLeft } from "react-icons/tfi";
 import { VscSignOut } from "react-icons/vsc";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import useAuth from "../../../Components/useAuth";
+import { FaUsers } from "react-icons/fa6";
+import { GrTransaction } from "react-icons/gr";
 
 const notifications = [
   { id: 1, text: "You have a new message from Alex.", timeAgo: "2h ago" },
@@ -78,7 +80,10 @@ const Dashboard = () => {
     { path: "drivers", label: "Drivers", icon: <IoCarSportOutline /> },
     { path: "tasks", label: "Task Management", icon: <GoTasklist  /> },
     { path: "orders", label: "Orders", icon: <TfiAlignLeft /> },
+    { path: "users", label: "Users", icon: <FaUsers /> },
     { path: "pricing", label: "Control Pricing", icon: <RiRoadMapLine /> },
+    { path: "transaction", label: "Transaction", icon: <GrTransaction /> },
+    { path: "paydriver", label: "Pay Driver", icon: <MdOutlinePayments /> },
     { path: "customers", label: "Customers", icon: <FiUsers /> },
     { path: "earnings", label: "Earnings", icon: <BsCashCoin /> },
     { path: "TermsPrivacyPolicy", label: "Terms & Privacy Policy", icon: <MdEditDocument /> },
@@ -223,44 +228,6 @@ const Dashboard = () => {
   </div>
 )}
 
-{showMessages && (
-  <div className="absolute right-16 top-14 w-80 bg-white shadow-xl rounded-xl z-50 overflow-hidden">
-    <div className="max-h-72 overflow-y-auto">
-      <ul>
-        {messages.slice(0, 5).map((user) => (
-          <li
-            key={user.id}
-            onClick={() => {
-              setShowMessages(false);
-              window.location.href = `/chat?user=${user.id}`;
-            }}
-            className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-100 
-            `}
-          >
-            <div className="relative">
-              <div className="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center text-lg font-semibold text-white">
-              {user.name.charAt(0)}
-              </div>
-              <BsCircleFill
-                className={`absolute -bottom-1 -right-1 text-xs ${
-                  user.online ? "text-green-500" : "text-gray-400"
-                }`}
-              />
-            </div>
-            <div>
-              <p className="font-medium text-sm">{user.name}</p>
-              <div className="text-sm text-gray-500">
-                  {user.online ? "Online" : "Offline"}
-                </div>
-              <p className="text-xs text-gray-500 truncate w-48">{user.lastMessage}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  </div>
-)}
-
 {showSettings && (
   <div className="absolute right-8 top-14 w-52 bg-white shadow-xl rounded-xl z-50 overflow-hidden">
     <ul className="text-sm text-gray-700">
@@ -337,10 +304,10 @@ const Dashboard = () => {
            </div>
             <div className="divider lg:divider-horizontal mx-0 my-0 block md:hidden"></div>
             <div className="md:flex items-center gap-2 hidden">
-              <span className="text-sm font-medium">John Doe</span>
-              <div className="avatar avatar-online">
+              <span className="text-sm font-medium">{admin?.firstName} {admin?.lastName}</span>
+              <div className="avatar avatar-online w-10 h-10">
                 <img
-                  src="https://i.pravatar.cc/40"
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHCU3cirazvFQg3yJnqZbs5R93HQCVpwv3cA&s"
                   alt="avatar"
                   className="w-8 h-8 rounded-full "
                 />
@@ -349,10 +316,10 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="flex items-center gap-2 md:hidden mt-10 pl-5">
-              <span className="text-sm font-medium">John Doe</span>
-              <div className="avatar avatar-online">
+              <span className="text-sm font-medium">{admin?.firstName} {admin?.lastName}</span>
+              <div className="avatar avatar-online w-10 h-10">
                 <img
-                  src="https://i.pravatar.cc/40"
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHCU3cirazvFQg3yJnqZbs5R93HQCVpwv3cA&s"
                   alt="avatar"
                   className="w-8 h-8 rounded-full "
                 />

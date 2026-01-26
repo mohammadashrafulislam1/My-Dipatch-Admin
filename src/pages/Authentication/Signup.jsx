@@ -65,9 +65,8 @@ const Signup = () => {
         />
 
         <h2 className="text-2xl font-bold text-center text-[#006FFF] mb-6">
-          Sign Up As Admin
-        </h2>
-
+          Create An Admin
+        </h2> 
         <form onSubmit={handleSubmit} className="space-y-5">
 
           <input

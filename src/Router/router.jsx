@@ -18,6 +18,9 @@ import Support from "../pages/Admin/Dashboard/Support";
 import Drivers from "../pages/Admin/Dashboard/Drivers";
 import TermsPrivacyPolicy from "../pages/Admin/Dashboard/Terms & Privacy Policy";
 import PrivateRoute from "./PrivateRouter";
+import Admin from "../pages/Admin/Dashboard/Admins";
+import Transactions from "../pages/Admin/Dashboard/Transactions";
+import PayDriverPage from "../pages/Admin/Dashboard/PayDriverPage";
 
 export const router = createBrowserRouter([
     {
@@ -74,6 +77,14 @@ export const router = createBrowserRouter([
                 element:<PrivateRoute><Wallet/></PrivateRoute>
             },
             {
+                path:'transaction',
+                element:<PrivateRoute><Transactions/></PrivateRoute>
+            },
+            {
+                path:'paydriver',
+                element:<PrivateRoute><PayDriverPage/></PrivateRoute>
+            },
+            {
                 path:'profile',
                 element:<PrivateRoute><Profile/></PrivateRoute>
             },
@@ -85,6 +96,10 @@ export const router = createBrowserRouter([
                 path:'notifications',
                 element:<PrivateRoute><Notification/></PrivateRoute>
             },
+            {
+                path:'users',
+                element:<PrivateRoute><Admin/></PrivateRoute>
+            },
         ]
     },
     {
@@ -93,7 +108,7 @@ export const router = createBrowserRouter([
         errorElement:<h1>err</h1>
     },
     {
-        path:'/signup',
+        path:'/add-admin',
         element:<PrivateRoute><Signup/></PrivateRoute>,
         errorElement:<h1>err</h1>
     },

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import io from "socket.io-client";
@@ -31,7 +31,13 @@ const [lastMessageMap, setLastMessageMap] = useState({});
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
   const socket = useRef(null); // Use useRef for socket
+const [highlightedUsers, setHighlightedUsers] = useState({});
+const selectedUserRef = useRef(selectedUser);
+const messagesEndRef = useRef(null);
 
+useEffect(() => {
+  selectedUserRef.current = selectedUser;
+}, [selectedUser]);
   // Fetch All Users
   const fetchUsers = async () => {
     const res = await axios.get(`${endPoint}/user`, {
@@ -70,9 +76,6 @@ const fetchChatHistory = async (userId) => {
   }
 };
 
-
-
-
   // Detect if user has an ACTIVE ride
   const isActiveRide = (user) => {
     const activeStatuses = ["pending", "accepted", "on_the_way", "in_progress", "at_stop"];
@@ -99,12 +102,19 @@ const fetchChatHistory = async (userId) => {
     fetchRides();
   }, []);
 
+useEffect(() => {
+  if (messagesEndRef.current) {
+    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+  }
+}, [messages]);
+
+
   // Socket connection
   useEffect(() => {
   if (!adminId) return;
 
   console.log("Connecting socket for adminId:", adminId);
-  socket.current = io(endPoint, {
+  socket.current = io("https://my-dipatch-backend.onrender.com", {
     transports: ["websocket"],
     query: { userId: adminId, role: "admin" },
     withCredentials: true,
@@ -122,44 +132,40 @@ const fetchChatHistory = async (userId) => {
   };
 }, [adminId]);
 
+console.log("highlightedUsers", highlightedUsers);
+
 
   // Socket message listener
- useEffect(() => {
+useEffect(() => {
+  
+console.log("socket.current:", socket.current);
   if (!socket.current) return;
 
   const handleNewMessage = (msg) => {
-    const otherUserId =
-    msg.senderId === adminId ? msg.recipientId : msg.senderId;
+    const currentSelectedUserId = selectedUserRef.current?._id;
+    const senderId = msg.senderId;
+console.log("New message from:", senderId);
+console.log("Selected user:", currentSelectedUserId);
+console.log("highlightedUsers before:", highlightedUsers);
 
-  // ⏱️ update last message time
-  setLastMessageMap((prev) => ({
-    ...prev,
-    [otherUserId]: new Date(msg.createdAt || Date.now()).getTime(),
-  }));
-    setMessages((prev) => {
-      // avoid duplicates
-      if (prev.some((m) => m._id === msg._id)) return prev;
+    // Only highlight if message is from a user and chat is NOT open
+    if (senderId !== adminId && senderId !== currentSelectedUserId) {
+      setHighlightedUsers(prev => ({ ...prev, [senderId]: true }));
+      setUnreadMap(prev => ({ ...prev, [senderId]: (prev[senderId] || 0) + 1 }));
+    }
 
-      // only append if it belongs to currently opened chat
-      if (
-        selectedUser &&
-        (
-          (msg.senderId === selectedUser._id && msg.recipientId === adminId) ||
-          (msg.senderId === adminId && msg.recipientId === selectedUser._id)
-        )
-      ) {
-        return [...prev, msg];
-      }
+    // If current chat, just append
+    if (
+      currentSelectedUserId &&
+      ((msg.senderId === currentSelectedUserId && msg.recipientId === adminId) ||
+       (msg.senderId === adminId && msg.recipientId === currentSelectedUserId))
+    ) {
+      setMessages(prev => [...prev, msg]);
+    }
 
-      return prev;
-    });
-    // 🔔 MARK UNREAD if message is NOT from admin
-  if (msg.senderId !== adminId) {
-    setUnreadMap((prev) => ({
-      ...prev,
-      [msg.senderId]: (prev[msg.senderId] || 0) + 1,
-    }));
-  }
+    // Update last message time
+    const otherUserId = msg.senderId === adminId ? msg.recipientId : msg.senderId;
+    setLastMessageMap(prev => ({ ...prev, [otherUserId]: new Date(msg.createdAt || Date.now()).getTime() }));
   };
 
   socket.current.on("support-message", handleNewMessage);
@@ -167,7 +173,8 @@ const fetchChatHistory = async (userId) => {
   return () => {
     socket.current.off("support-message", handleNewMessage);
   };
-}, [adminId, selectedUser]);
+}, [adminId]);
+
 
   // Auto-select user via URL param
   useEffect(() => {
@@ -360,7 +367,11 @@ setLastMessageMap((prev) => ({
   return (
     <div className="flex h-[600px] max-w-4xl mx-auto bg-white shadow-md rounded-xl overflow-hidden">
       {/* LEFT SIDEBAR */}
-      <div className="w-full sm:w-1/3 border-r bg-gray-100">
+      <div
+    className={`transition-all duration-300 ${
+      selectedUser ? "w-0 md:w-1/3 hidden md:block" : "w-full"
+    } border-r bg-gray-100 overflow-hidden`}
+  >
         <div className="p-4 text-xl font-bold border-b">All Users</div>
 
         {/* SEARCH BAR */}
@@ -379,22 +390,23 @@ setLastMessageMap((prev) => ({
           {filteredUsers.map((u) => {
             const active = isActiveRide(u);
             return (
-              <div
-                key={u._id}
-                onClick={() => {
-                  setSelectedUser(u);
-                  fetchChatHistory(u._id);
-                  navigate(`/chat?user=${u._id}`);
-                  // ✅ Clear unread badge
-  setUnreadMap((prev) => ({
-    ...prev,
-    [u._id]: 0,
-  }));
-                }}
-                className={`cursor-pointer px-4 py-3 flex items-center gap-3 hover:bg-gray-200 transition-colors ${
-                  selectedUser?._id === u._id ? "bg-blue-50 border-l-4 border-blue-500" : ""
-                }`}
-              >
+             <div
+  key={u._id}
+  onClick={() => {
+    setSelectedUser(u);
+    fetchChatHistory(u._id);
+    navigate(`/chat?user=${u._id}`);
+    
+    // Clear unread and highlight when user opens chat
+    setUnreadMap((prev) => ({ ...prev, [u._id]: 0 }));
+    setHighlightedUsers((prev) => ({ ...prev, [u._id]: false }));
+  }}
+  className={`cursor-pointer px-4 py-3 flex items-center gap-3 hover:bg-gray-200 transition-colors
+    ${selectedUser?._id === u._id ? "bg-blue-50 border-l-4 border-blue-500" : ""}
+    ${highlightedUsers[u._id] ? "bg-yellow-100 animate-pulse" : ""} 
+  `}
+>
+
                 <div className="relative">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-lg font-semibold text-blue-700">
                     {(u.firstName || "U").charAt(0).toUpperCase()}
@@ -404,15 +416,20 @@ setLastMessageMap((prev) => ({
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">
-                    {u.firstName} {u.lastName}
-                    {/* 🔵 UNREAD BADGE */}
-    {unreadMap[u._id] > 0 && (
-      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
-        {unreadMap[u._id]}
-      </span>
-    )}
-                  </div>
+               <div
+  className={`font-medium truncate ${
+    highlightedUsers[u._id] ? "text-green-600 font-bold" : ""
+  }`}
+>
+  {u.firstName} {u.lastName}
+  {unreadMap[u._id] > 0 && (
+    <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
+      {unreadMap[u._id]}
+    </span>
+  )}
+</div>
+
+
                   <div className="text-sm text-gray-500 flex items-center gap-1">
                     <span className={`inline-block w-2 h-2 rounded-full ${active ? 'bg-green-500' : 'bg-gray-400'}`}></span>
                     {u.role === "driver" ? "Driver" : "Customer"}
@@ -426,7 +443,7 @@ setLastMessageMap((prev) => ({
       </div>
 
       {/* RIGHT CHAT WINDOW */}
-      <div className="flex-1 flex flex-col">
+       {selectedUser && (<div className="flex-1 flex flex-col overflow-hidden">
         {!selectedUser ? (
           <div className="flex items-center justify-center h-full text-gray-500 text-lg">
             👈 Select a user to start chatting
@@ -457,7 +474,7 @@ setLastMessageMap((prev) => ({
             </div>
 
             {/* MESSAGES AREA */}
-            <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50">
+            <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50 break-words">
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500">
                   <div className="text-lg mb-2">No messages yet</div>
@@ -473,13 +490,8 @@ setLastMessageMap((prev) => ({
                       key={msg._id || idx}
                       className={`flex ${isFromAdmin ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div
-                        className={`max-w-[70%] px-4 py-2 rounded-2xl ${
-                          isFromAdmin
-                            ? 'bg-blue-500 text-white rounded-br-none'
-                            : 'bg-white text-gray-800 rounded-bl-none border border-gray-200'
-                        } ${isFailed ? 'opacity-70' : ''}`}
-                      >
+                    <div className={`break-words px-4 py-2 rounded-2xl max-w-[90%] sm:max-w-[70%] ${
+isFromAdmin ? 'bg-blue-500 text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none border border-gray-200'  } ${isFailed ? 'opacity-70' : ''}`}>
                         {/* Message text */}
                         {msg.message && <p className="break-words">{msg.message}</p>}
                         
@@ -518,6 +530,8 @@ setLastMessageMap((prev) => ({
                   );
                 })
               )}
+              {/* Dummy div to scroll to */}
+  <div ref={messagesEndRef} />
             </div>
 
             {/* INPUT AREA */}
@@ -552,9 +566,9 @@ setLastMessageMap((prev) => ({
                 </div>
               )}
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center md:gap-2 gap-1">
                 {/* File upload buttons */}
-                <label className="cursor-pointer p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <label className="cursor-pointer hover:bg-gray-100 rounded-full transition-colors">
                   <BsPaperclip className="text-xl text-gray-600" />
                   <input
                     type="file"
@@ -564,7 +578,7 @@ setLastMessageMap((prev) => ({
                   />
                 </label>
                 
-                <label className="cursor-pointer p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <label className="cursor-pointer hover:bg-gray-100 rounded-full transition-colors">
                   <MdImage className="text-xl text-gray-600" />
                   <input
                     type="file"
@@ -581,7 +595,7 @@ setLastMessageMap((prev) => ({
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className="flex-1 border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 border rounded-full px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Type your message..."
                   disabled={!selectedUser}
                 />
@@ -606,7 +620,7 @@ setLastMessageMap((prev) => ({
             </div>
           </>
         )}
-      </div>
+      </div>)}
     </div>
   );
 };

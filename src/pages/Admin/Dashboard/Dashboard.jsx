@@ -30,6 +30,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import useAuth from "../../../Components/useAuth";
 import { FaUsers } from "react-icons/fa6";
 import { GrTransaction } from "react-icons/gr";
+import MobileWarning from "../../../Components/MobileWarning";
 
 const notifications = [
   { id: 1, text: "You have a new message from Alex.", timeAgo: "2h ago" },
@@ -94,7 +95,7 @@ const Dashboard = () => {
 
   return (
     <div className="flex w-full overflow-hidden text-black dark:text-black ">
-
+  <MobileWarning/>
       {/* Mobile Hamburger Button */}
       <button
         onClick={() => setSidebarOpen(true)}

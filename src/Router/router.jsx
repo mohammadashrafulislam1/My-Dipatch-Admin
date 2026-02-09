@@ -21,12 +21,13 @@ import PrivateRoute from "./PrivateRouter";
 import Admin from "../pages/Admin/Dashboard/Admins";
 import Transactions from "../pages/Admin/Dashboard/Transactions";
 import PayDriverPage from "../pages/Admin/Dashboard/PayDriverPage";
+import ErrorPage from "../Components/ErrorPage";
 
 export const router = createBrowserRouter([
     {
         path:'/',
-        element:<Dashboard/>,
-        errorElement:<h1>err</h1>,
+        element:<PrivateRoute><Dashboard/></PrivateRoute>,
+        errorElement:<ErrorPage/>,
         children:[
             {
                 path:'',

@@ -40,10 +40,9 @@ export default function Customers() {
   const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginated = customers.slice(startIdx, startIdx + ITEMS_PER_PAGE);
 
-  // Calculate total spent for a customer
   const calculateTotalSpent = (customerId) => {
   const completedRides = rides.filter(
-    (r) => r.customerId === customerId && r.status === "completed"
+    (r) => r.customerId.toString() === customerId.toString() && r.status === "completed"
   );
 
   const total = completedRides.reduce(
@@ -51,8 +50,10 @@ export default function Customers() {
     0
   );
 
-  return total.toFixed(2);
+  console.log("rides", rides);
+  return total;
 };
+
 
 
   return (

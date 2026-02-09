@@ -37,7 +37,7 @@ const Login = () => {
   const handleFacebookLogin = () => toast("Facebook login coming soon!");
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F4F9FF] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-red-800 px-4">
       <div className="w-full max-w-md bg-white p-6 sm:p-4 rounded-2xl shadow-xl">
         <img
           src="https://i.ibb.co/TxC947Cw/thumbnail-Image-2025-07-09-at-2-10-AM-removebg-preview.png"

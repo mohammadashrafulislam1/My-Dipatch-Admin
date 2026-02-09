@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BiSupport,
   BiWalletAlt,
@@ -31,32 +31,24 @@ import useAuth from "../../../Components/useAuth";
 import { FaUsers } from "react-icons/fa6";
 import { GrTransaction } from "react-icons/gr";
 import MobileWarning from "../../../Components/MobileWarning";
-
-const notifications = [
-  { id: 1, text: "You have a new message from Alex.", timeAgo: "2h ago" },
-  { id: 2, text: "New comment on your post.", timeAgo: "3h ago" },
-  { id: 3, text: "System update completed.", timeAgo: "6h ago" },
-  { id: 4, text: "Your password was changed.", timeAgo: "Yesterday" },
-  { id: 5, text: "Weekly summary is ready.", timeAgo: "2 days ago" },
-];
-
-
-const messages = [
-  { id: 1, name: "John Doe", online: true },
-  { id: 2, name: "Jane Smith", online: false },
-  { id: 3, name: "Mike Johnson", online: true },
-];
+import NotificationComp from "../../../Components/NotificationComp";
+import { useNotifications } from "../../../Components/Notifications";
 
 
 const Dashboard = () => {
   const location = useLocation();
   const {admin, logout} = useAuth()
-  console.log("user", admin)
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const { notifications, unreadCount, markAsRead, deleteNotification } =useNotifications();
+  const [notifCount, setNotifCount] = useState(0);
   
+  useEffect(() => {
+    setNotifCount(unreadCount);
+  }, [notifications]);
+
   const pageTitles = {
     "/": "Dashboard",
     "/orders": "Order Lists",
@@ -200,21 +192,13 @@ const Dashboard = () => {
         </div>
       )}
 {showNotifications && (
-  <div className="absolute right-4 top-14 w-80 bg-white shadow-xl rounded-xl z-50 border border-gray-200">
+  <div className="absolute right-4 top-14 lg:w-[25%] md:w-[45%] w-[90%] bg-white shadow-xl rounded-xl z-50 border border-gray-200">
     <div className="px-4 py-3 border-b">
       <h3 className="text-base font-semibold text-gray-800">Notifications</h3>
     </div>
 
     <ul className="max-h-64 overflow-y-auto">
-      {notifications.slice(0, 5).map((note) => (
-        <li key={note.id} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b">
-          <div className="h-2 w-2 mt-2 rounded-full bg-blue-500 shrink-0"></div>
-          <div className="text-sm text-gray-700 leading-tight">
-            <p>{note.text}</p>
-            <span className="text-xs text-gray-400">{note.timeAgo || "Just now"}</span>
-          </div>
-        </li>
-      ))}
+      <NotificationComp onCountChange={setNotifCount}/>
     </ul>
 
     <button
@@ -277,7 +261,7 @@ const Dashboard = () => {
           }} >
               <FiBell className="text-xl cursor-pointer text-[#006FFF]" />
               <div className="bg-[#006FFF] text-white poppins-light text-[10px] px-1 rounded-full absolute top-[-7px] right-[-7px] border-[#fff] border-2">
-                0
+                {notifCount}
               </div>
             </div>
             <div className="bg-[#006eff2a] w-[36px] h-[36px] flex items-center justify-center rounded-lg relative"

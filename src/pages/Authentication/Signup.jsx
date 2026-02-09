@@ -2,6 +2,8 @@ import { useState, useContext } from "react";
 import { IoEyeOffSharp, IoEyeSharp } from "react-icons/io5";
 import axios from "axios";
 import useAuth from "../../Components/useAuth";
+import { FaHome } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const Signup = () => {
   const { signup, login } = useAuth(); // ⬅️ FIXED
@@ -16,7 +18,7 @@ const Signup = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-
+   const navigate = useNavigate()
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -55,7 +57,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F4F9FF] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-blue-800 px-4">
       <div className="w-full max-w-md bg-white md:p-8 p-4 rounded-2xl shadow-2xl">
 
         <img
@@ -141,10 +143,16 @@ const Signup = () => {
             type="submit"
             className="w-full bg-[#008000] text-white py-2 rounded-full font-semibold"
           >
-            Sign Up
+            Create An Admin
           </button>
         </form>
-
+        <button
+                onClick={() => navigate("/")}
+                className="flex items-center justify-center mx-auto mt-2 gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-semibold transition"
+              >
+                <FaHome className="w-5 h-5" />
+                Go Home
+              </button>
       </div>
     </div>
   );

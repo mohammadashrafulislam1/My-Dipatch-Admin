@@ -133,7 +133,7 @@ const fetchCustomers = async (ids) => {
                 </td>
 
                 <td>{ride.distance}</td>
-                <td>${ride.price}</td>
+                <td>${ride.customerFare}</td>
 
                 <td>
                   <span

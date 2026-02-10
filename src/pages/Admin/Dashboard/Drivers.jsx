@@ -57,7 +57,7 @@ const Drivers = () => {
   };
 
   if (loading) {
-    return <p className="p-6 text-lg">Loading drivers...</p>;
+    return <p className="p-6 text-center  text-lg">Loading drivers...</p>;
   }
 
   return (

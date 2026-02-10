@@ -2,6 +2,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import useAuth from "../Components/useAuth";
+import LoadingScreen from "../Components/LoadingScreen";
 
 const PrivateRoute = ({ children }) => {
   const { admin, loading } = useAuth();
@@ -16,7 +17,7 @@ const PrivateRoute = ({ children }) => {
   }, [admin, loading]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingScreen/>;
   }
 
   if (admin) {

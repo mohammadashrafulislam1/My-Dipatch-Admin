@@ -1,13 +1,16 @@
 import { useState } from "react";
+import useAuth from "../../../Components/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const Settings = () => {
-  const [formData, setFormData] = useState({
-    name: "John Doe",
-    email: "johndoe@example.com",
-    phone: "+1 (123) 456-7890",
-    notifications: true,
-  });
-
+  const {admin} = useAuth()
+ const [formData, setFormData] = useState({
+  name: `${admin?.firstName || ""} ${admin?.lastName || ""}`.trim() || "John Doe",
+  email: admin?.email || "johndoe@example.com",
+  phone: admin?.phone || "+1 (123) 456-7890",
+  notifications: true,
+});
+const navigate = useNavigate();
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -91,7 +94,7 @@ const Settings = () => {
           </button>
           <button
             type="button"
-            onClick={() => alert("Cancelled changes.")}
+            onClick={() => navigate('/profile')}
             className="bg-gray-100 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-200"
           >
             Cancel

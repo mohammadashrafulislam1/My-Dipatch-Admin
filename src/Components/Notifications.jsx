@@ -68,7 +68,7 @@ const user = admin;
     fetchNotifications();
 
     // Auto refresh every 10 seconds
-    intervalRef.current = setInterval(fetchNotifications, 100);
+    intervalRef.current = setInterval(fetchNotifications, 10000);
 
     return () => clearInterval(intervalRef.current);
   }, [user?._id, token]);
